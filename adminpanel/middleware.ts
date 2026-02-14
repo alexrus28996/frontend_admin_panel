@@ -7,22 +7,8 @@ import { APP_ROUTES, DEFAULT_AUTHENTICATED_ROUTE, PUBLIC_ROUTES } from "@/src/co
 const isPublicRoute = (pathname: string): boolean =>
   PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
-const PROTECTED_ROUTE_PREFIXES = [
-  APP_ROUTES.app.dashboard,
-  APP_ROUTES.app.users,
-  APP_ROUTES.app.roles,
-  APP_ROUTES.app.products,
-  APP_ROUTES.app.categories,
-  APP_ROUTES.app.orders,
-  APP_ROUTES.app.inventory,
-  APP_ROUTES.app.reports,
-  APP_ROUTES.app.settings,
-] as const;
-
 const isProtectedApplicationRoute = (pathname: string): boolean =>
-  PROTECTED_ROUTE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  pathname === "/admin" || pathname.startsWith("/admin/");
 
 const hasAuthIndicator = (request: NextRequest): boolean => {
   const accessTokenCookie = request.cookies.get(env.authCookieName)?.value;

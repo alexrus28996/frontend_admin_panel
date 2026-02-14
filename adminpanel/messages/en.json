@@ -24,10 +24,42 @@
     "retry": "Retry",
     "noData": "No data available",
     "emptyDescription": "There are no records to display yet",
-    "unauthorized": "You are not authorized to view this section"
+    "unauthorized": "You are not authorized to view this section",
+    "openSidebar": "Open sidebar",
+    "closeSidebar": "Close sidebar",
+    "closeMenuOverlay": "Close menu overlay",
+    "breadcrumb": "Breadcrumb"
   },
   "auth": {
-    "guest": "Guest"
+    "guest": "Guest",
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Use your enterprise credentials to continue",
+      "heroTitle": "Secure access for your operations workspace",
+      "heroDescription": "Manage teams, permissions, and platform activity from one trusted console.",
+      "formAria": "Login form",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@company.com",
+      "emailAria": "Email address",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "passwordAria": "Password",
+      "showPassword": "Show",
+      "hidePassword": "Hide",
+      "submit": "Sign in"
+    },
+    "logout": {
+      "title": "Signing out",
+      "description": "Your secure session is being closed.",
+      "failed": "Unable to complete sign out automatically.",
+      "loadingAria": "Logout processing"
+    },
+    "sessionExpired": {
+      "title": "Session expired",
+      "subtitle": "For your security, this session has ended.",
+      "description": "Please sign in again to continue managing your workspace.",
+      "cta": "Go to sign in"
+    }
   },
   "table": {
     "dataGrid": "Data grid",
@@ -44,7 +76,18 @@
     "next": "Next"
   },
   "errors": {
-    "general": "Something went wrong"
+    "general": "Something went wrong",
+    "auth": {
+      "loginTitle": "Unable to sign in",
+      "invalidCredentials": "Please check your credentials and try again"
+    },
+    "forbidden": {
+      "title": "Access forbidden",
+      "subtitle": "Your account does not have permission for this area.",
+      "description": "If you need additional access, contact your platform administrator.",
+      "dashboardCta": "Back to dashboard",
+      "logoutCta": "Sign out"
+    }
   },
   "validation": {
     "required": "This field is required",

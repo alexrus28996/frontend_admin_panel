@@ -2,6 +2,7 @@ import { refreshAccessToken } from "@/src/api/client/refresh-queue";
 import { normalizeApiError } from "@/src/api/utils/error-normalizer";
 import { tokenStorage } from "@/src/auth/storage/token-storage";
 import { env } from "@/src/config/env";
+import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
 import { APP_ROUTES } from "@/src/constants/routes";
 
 export class ApiHttpError extends Error {
@@ -21,9 +22,15 @@ interface RequestOptions extends RequestInit {
   timeoutMs?: number;
 }
 
-const redirectToLogin = (): void => {
+const nonRefreshableEndpoints = new Set<string>([
+  API_ENDPOINTS.auth.login,
+  API_ENDPOINTS.auth.logout,
+  API_ENDPOINTS.auth.refresh,
+]);
+
+const redirectToSessionExpired = (): void => {
   if (typeof window !== "undefined") {
-    window.location.replace(APP_ROUTES.auth.login);
+    window.location.replace(APP_ROUTES.auth.sessionExpired);
   }
 };
 
@@ -73,7 +80,9 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
     return responseData as TResponse;
   }
 
-  if (response.status === 401 && !options.retry) {
+  const shouldAttemptRefresh = !options.retry && response.status === 401 && !nonRefreshableEndpoints.has(path);
+
+  if (shouldAttemptRefresh) {
     try {
       const nextToken = await refreshAccessToken(apiClient);
       headers.set("Authorization", `Bearer ${nextToken}`);
@@ -85,7 +94,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
       });
     } catch (error) {
       tokenStorage.clearTokens();
-      redirectToLogin();
+      redirectToSessionExpired();
       throw normalizeApiError(error);
     }
   }

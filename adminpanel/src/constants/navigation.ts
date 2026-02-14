@@ -11,13 +11,13 @@ export interface NavigationItem {
 }
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
-  { route: APP_ROUTES.app.dashboard, labelKey: "navigation.dashboard", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager, ROLES.viewer] },
-  { route: APP_ROUTES.app.users, labelKey: "navigation.users", roles: [ROLES.superAdmin, ROLES.admin] },
-  { route: APP_ROUTES.app.roles, labelKey: "navigation.roles", roles: [ROLES.superAdmin] },
-  { route: APP_ROUTES.app.products, labelKey: "navigation.products", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
-  { route: APP_ROUTES.app.categories, labelKey: "navigation.categories", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
-  { route: APP_ROUTES.app.orders, labelKey: "navigation.orders", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
-  { route: APP_ROUTES.app.inventory, labelKey: "navigation.inventory", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
-  { route: APP_ROUTES.app.reports, labelKey: "navigation.reports", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
-  { route: APP_ROUTES.app.settings, labelKey: "navigation.settings", roles: [ROLES.superAdmin, ROLES.admin] },
+  { route: APP_ROUTES.admin.dashboard, labelKey: "navigation.dashboard", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager, ROLES.viewer] },
+  { route: APP_ROUTES.admin.users, labelKey: "navigation.users", roles: [ROLES.superAdmin, ROLES.admin] },
+  { route: APP_ROUTES.admin.roles, labelKey: "navigation.roles", roles: [ROLES.superAdmin] },
+  { route: APP_ROUTES.admin.products, labelKey: "navigation.products", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
+  { route: APP_ROUTES.admin.categories, labelKey: "navigation.categories", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
+  { route: APP_ROUTES.admin.orders, labelKey: "navigation.orders", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
+  { route: APP_ROUTES.admin.inventory, labelKey: "navigation.inventory", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
+  { route: APP_ROUTES.admin.reports, labelKey: "navigation.reports", roles: [ROLES.superAdmin, ROLES.admin, ROLES.manager] },
+  { route: APP_ROUTES.admin.settings, labelKey: "navigation.settings", roles: [ROLES.superAdmin, ROLES.admin] },
 ];

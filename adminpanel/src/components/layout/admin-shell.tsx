@@ -21,7 +21,7 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
 
   const visibleItems = NAVIGATION_ITEMS.filter((item) => {
     if (!user) {
-      return item.route === APP_ROUTES.app.dashboard;
+      return item.route === APP_ROUTES.admin.dashboard;
     }
 
     return hasAnyRole(user.roles, item.roles);
@@ -42,7 +42,7 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
       >
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm font-semibold">{t("app.name")}</p>
-          <Button variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(false)} ariaLabel="Close sidebar">
+          <Button variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(false)} ariaLabel={t("common.closeSidebar")}>
             ✕
           </Button>
         </div>
@@ -66,15 +66,15 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
         </nav>
       </aside>
 
-      {sidebarOpen ? <button className="fixed inset-0 z-20 bg-text-primary/20 md:hidden" aria-label="Close menu overlay" onClick={() => setSidebarOpen(false)} /> : null}
+      {sidebarOpen ? <button className="fixed inset-0 z-20 bg-text-primary/20 md:hidden" aria-label={t("common.closeMenuOverlay")} onClick={() => setSidebarOpen(false)} /> : null}
 
       <div className="flex min-h-screen flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3" aria-label={t("navigation.topbar")}>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(true)} ariaLabel="Open sidebar">
+            <Button variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(true)} ariaLabel={t("common.openSidebar")}>
               ☰
             </Button>
-            <p className="text-sm text-text-secondary" aria-label="Breadcrumb">
+            <p className="text-sm text-text-secondary" aria-label={t("common.breadcrumb")}>
               {breadcrumb.join(" / ")}
             </p>
           </div>
