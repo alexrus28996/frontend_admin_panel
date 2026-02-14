@@ -92,5 +92,49 @@
   "validation": {
     "required": "This field is required",
     "invalidEmail": "Please enter a valid email"
+  },
+  "dashboard": {
+    "title": "Executive Dashboard",
+    "kpis": {
+      "section": "Key performance indicators",
+      "errorTitle": "Unable to load KPI metrics",
+      "empty": "No KPI metrics available for the selected period"
+    },
+    "sales": {
+      "title": "Sales report",
+      "filtersTitle": "Date range filters",
+      "from": "From date",
+      "to": "To date",
+      "groupBy": "Group by",
+      "groupByOptions": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month"
+      },
+      "columns": {
+        "period": "Period",
+        "totalSales": "Total sales",
+        "orderCount": "Order count",
+        "status": "Status"
+      }
+    },
+    "topProducts": {
+      "title": "Top products",
+      "columns": {
+        "productName": "Product",
+        "quantitySold": "Quantity sold",
+        "revenue": "Revenue",
+        "status": "Status"
+      }
+    },
+    "topCustomers": {
+      "title": "Top customers",
+      "columns": {
+        "customerName": "Customer",
+        "orders": "Orders",
+        "spent": "Total spent",
+        "status": "Status"
+      }
+    }
   }
 }
