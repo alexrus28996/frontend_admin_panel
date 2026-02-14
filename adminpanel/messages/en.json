@@ -136,5 +136,48 @@
         "status": "Status"
       }
     }
+  },
+  "users": {
+    "title": "Users",
+    "columns": {
+      "id": "ID",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "actions": "Actions",
+      "unknown": "Unknown"
+    },
+    "actions": {
+      "view": "View",
+      "promote": "Promote",
+      "demote": "Demote",
+      "loading": "Loading...",
+      "missingId": "Identifier unavailable"
+    },
+    "permissions": {
+      "title": "Permissions",
+      "inputLabel": "Permission value",
+      "inputPlaceholder": "Enter permission",
+      "add": "Add permission",
+      "remove": "Remove",
+      "empty": "No permissions available"
+    },
+    "promote": {
+      "success": "User promoted successfully",
+      "error": "Unable to promote user"
+    },
+    "demote": {
+      "success": "User demoted successfully",
+      "error": "Unable to demote user"
+    },
+    "detail": {
+      "title": "User details"
+    },
+    "empty": {
+      "title": "No users found",
+      "description": "No matching records were found"
+    },
+    "error": {
+      "title": "Unable to load users"
+    }
   }
 }

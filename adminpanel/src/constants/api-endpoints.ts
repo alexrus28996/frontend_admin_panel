@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
     userPromote: (id: string | number): string => `${withId("/api/admin/users", id)}/promote`,
     userDemote: (id: string | number): string => `${withId("/api/admin/users", id)}/demote`,
     userPermissions: (id: string | number): string => `${withId("/api/admin/users", id)}/permissions`,
+    userPermissionsAdd: (id: string | number): string => `${withId("/api/admin/users", id)}/permissions/add`,
+    userPermissionsRemove: (id: string | number): string => `${withId("/api/admin/users", id)}/permissions/remove`,
     metrics: "/api/admin/metrics",
     reports: {
       sales: "/api/admin/reports/sales",

@@ -11,6 +11,7 @@ export const ROUTES = {
   admin: {
     dashboard: "/admin/dashboard",
     users: "/admin/users",
+    userById: (id: string | number): string => `/admin/users/${id}`,
     roles: "/admin/roles",
     products: "/admin/products",
     categories: "/admin/categories",
