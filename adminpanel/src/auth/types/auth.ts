@@ -1,5 +1,6 @@
 import type { Nullable } from "@/src/api/types/common";
-import type { AppRole } from "@/src/permissions/types";
+import type { AppPermission } from "@/src/constants/permissions";
+import type { AppRole } from "@/src/constants/roles";
 
 export interface AuthUser {
   id: string;
@@ -7,7 +8,7 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   roles: AppRole[];
-  permissions: string[];
+  permissions: AppPermission[];
 }
 
 export interface TokenPair {

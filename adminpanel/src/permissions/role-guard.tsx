@@ -7,7 +7,7 @@ import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { hasAnyRole } from "@/src/permissions/permission-service";
 import { Alert } from "@/src/components/ui/alert";
 
-import type { AppRole } from "@/src/permissions/types";
+import type { AppRole } from "@/src/constants/roles";
 
 export const RoleGuard = ({
   roles,

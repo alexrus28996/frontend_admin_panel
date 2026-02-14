@@ -1,13 +1,14 @@
-import { env } from "@/src/config/env";
-import { tokenStorage } from "@/src/auth/storage/token-storage";
-import { getSingleFlightRefreshToken } from "@/src/api/client/refresh-queue";
+import { refreshAccessToken } from "@/src/api/client/refresh-queue";
 import { normalizeApiError } from "@/src/api/utils/error-normalizer";
+import { tokenStorage } from "@/src/auth/storage/token-storage";
+import { env } from "@/src/config/env";
+import { APP_ROUTES } from "@/src/constants/routes";
 
 export class ApiHttpError extends Error {
-  status: number;
+  status?: number;
   data?: unknown;
 
-  constructor(message: string, status: number, data?: unknown) {
+  constructor(message: string, status?: number, data?: unknown) {
     super(message);
     this.name = "ApiHttpError";
     this.status = status;
@@ -17,7 +18,33 @@ export class ApiHttpError extends Error {
 
 interface RequestOptions extends RequestInit {
   retry?: boolean;
+  timeoutMs?: number;
 }
+
+const redirectToLogin = (): void => {
+  if (typeof window !== "undefined") {
+    window.location.replace(APP_ROUTES.auth.login);
+  }
+};
+
+const withTimeoutSignal = (timeoutMs: number, externalSignal?: AbortSignal | null): AbortSignal => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (externalSignal) {
+    externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+
+  controller.signal.addEventListener(
+    "abort",
+    () => {
+      clearTimeout(timeout);
+    },
+    { once: true },
+  );
+
+  return controller.signal;
+};
 
 const request = async <TResponse>(path: string, options: RequestOptions = {}): Promise<TResponse> => {
   const accessToken = tokenStorage.getAccessToken();
@@ -34,6 +61,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
   const response = await fetch(`${env.apiBaseUrl}${path.replace(env.apiBaseUrl, "")}`, {
     ...options,
     headers,
+    signal: withTimeoutSignal(options.timeoutMs ?? env.requestTimeoutMs, options.signal),
   });
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -47,7 +75,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
 
   if (response.status === 401 && !options.retry) {
     try {
-      const nextToken = await getSingleFlightRefreshToken(apiClient);
+      const nextToken = await refreshAccessToken(apiClient);
       headers.set("Authorization", `Bearer ${nextToken}`);
 
       return request<TResponse>(path, {
@@ -57,6 +85,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
       });
     } catch (error) {
       tokenStorage.clearTokens();
+      redirectToLogin();
       throw normalizeApiError(error);
     }
   }
@@ -65,10 +94,16 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
 };
 
 export const apiClient = {
-  get: <TResponse>(path: string): Promise<TResponse> => request<TResponse>(path, { method: "GET" }),
-  post: <TResponse, TPayload = unknown>(path: string, payload?: TPayload): Promise<TResponse> =>
+  get: <TResponse>(path: string, signal?: AbortSignal): Promise<TResponse> =>
+    request<TResponse>(path, { method: "GET", signal }),
+  post: <TResponse, TPayload = unknown>(
+    path: string,
+    payload?: TPayload,
+    signal?: AbortSignal,
+  ): Promise<TResponse> =>
     request<TResponse>(path, {
       method: "POST",
       body: payload ? JSON.stringify(payload) : undefined,
+      signal,
     }),
 };

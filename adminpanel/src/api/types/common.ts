@@ -7,6 +7,13 @@ export interface ApiErrorPayload {
   status?: number;
 }
 
+export interface NormalizedApiErrorShape {
+  code: string;
+  message: string;
+  details?: unknown;
+  status?: number;
+}
+
 export interface ApiSuccessResponse<TData> {
   data: TData;
   message?: string;

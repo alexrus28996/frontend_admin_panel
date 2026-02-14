@@ -24,15 +24,22 @@ const isProtectedApplicationRoute = (pathname: string): boolean =>
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 
+const hasAuthIndicator = (request: NextRequest): boolean => {
+  const accessTokenCookie = request.cookies.get(env.authCookieName)?.value;
+  const bearerToken = request.headers.get("authorization");
+
+  return Boolean(accessTokenCookie || bearerToken?.startsWith("Bearer "));
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get(env.authCookieName)?.value;
+  const isAuthenticated = hasAuthIndicator(request);
 
-  if (isPublicRoute(pathname) && accessToken && pathname === APP_ROUTES.auth.login) {
+  if (isPublicRoute(pathname) && isAuthenticated && pathname === APP_ROUTES.auth.login) {
     return NextResponse.redirect(new URL(DEFAULT_AUTHENTICATED_ROUTE, request.url));
   }
 
-  if (isProtectedApplicationRoute(pathname) && !accessToken) {
+  if (isProtectedApplicationRoute(pathname) && !isAuthenticated) {
     return NextResponse.redirect(new URL(APP_ROUTES.auth.login, request.url));
   }
 

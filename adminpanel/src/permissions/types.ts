@@ -1,8 +1,7 @@
-export const APP_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"] as const;
-
-export type AppRole = (typeof APP_ROLES)[number];
+import type { AppPermission } from "@/src/constants/permissions";
+import type { AppRole } from "@/src/constants/roles";
 
 export interface PermissionRule {
   allowedRoles: AppRole[];
-  requiredPermissions?: string[];
+  requiredPermissions?: AppPermission[];
 }

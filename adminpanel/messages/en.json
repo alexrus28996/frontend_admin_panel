@@ -1,9 +1,14 @@
 {
   "app": {
     "name": "Enterprise Admin Panel",
-    "description": "Production-grade architecture initialized"
+    "description": "Production-grade architecture initialized",
+    "foundationTitle": "Architecture foundation is ready",
+    "foundationSubtitle": "Core infrastructure is configured for enterprise modules"
   },
   "navigation": {
+    "main": "Main navigation",
+    "sidebar": "Sidebar",
+    "topbar": "Top bar",
     "dashboard": "Dashboard",
     "users": "Users",
     "roles": "Roles",
@@ -21,16 +26,28 @@
     "emptyDescription": "There are no records to display yet",
     "unauthorized": "You are not authorized to view this section"
   },
-  "home": {
-    "title": "Architecture foundation is ready",
-    "subtitle": "Core infrastructure is configured for enterprise modules"
+  "auth": {
+    "guest": "Guest"
   },
   "table": {
+    "dataGrid": "Data grid",
+    "id": "ID",
+    "name": "Name",
     "searchPlaceholder": "Search",
+    "filters": "Filters",
+    "filtersHint": "Use filters to narrow down the result set.",
+    "toolbarHint": "Server-side ready table toolbar",
     "page": "Page",
     "of": "of",
     "rowsPerPage": "Rows per page",
     "previous": "Previous",
     "next": "Next"
+  },
+  "errors": {
+    "general": "Something went wrong"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email"
   }
 }

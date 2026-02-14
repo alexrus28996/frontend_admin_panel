@@ -1,5 +1,5 @@
-import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
 import { tokenStorage } from "@/src/auth/storage/token-storage";
+import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
 
 interface RefreshResponse {
   token: string;
@@ -7,36 +7,57 @@ interface RefreshResponse {
 }
 
 interface RefreshClient {
-  post: <TResponse, TPayload = unknown>(path: string, payload?: TPayload) => Promise<TResponse>;
+  post: <TResponse, TPayload = unknown>(path: string, payload?: TPayload, signal?: AbortSignal) => Promise<TResponse>;
 }
 
-let activeRefreshPromise: Promise<string> | null = null;
+let isRefreshing = false;
+let waitingQueue: Array<{ resolve: (token: string) => void; reject: (error: Error) => void }> = [];
 
-const requestTokenRefresh = async (client: RefreshClient): Promise<string> => {
+const flushQueueSuccess = (token: string): void => {
+  waitingQueue.forEach((item) => item.resolve(token));
+  waitingQueue = [];
+};
+
+const flushQueueError = (error: Error): void => {
+  waitingQueue.forEach((item) => item.reject(error));
+  waitingQueue = [];
+};
+
+const enqueueWaitingRequest = (): Promise<string> =>
+  new Promise((resolve, reject) => {
+    waitingQueue.push({ resolve, reject });
+  });
+
+export const refreshAccessToken = async (client: RefreshClient): Promise<string> => {
+  if (isRefreshing) {
+    return enqueueWaitingRequest();
+  }
+
   const refreshToken = tokenStorage.getRefreshToken();
 
   if (!refreshToken) {
     throw new Error("MISSING_REFRESH_TOKEN");
   }
 
-  const data = await client.post<RefreshResponse, { refreshToken: string }>(API_ENDPOINTS.auth.refresh, {
-    refreshToken,
-  });
+  isRefreshing = true;
 
-  tokenStorage.setTokens({
-    accessToken: data.token,
-    refreshToken: data.refreshToken,
-  });
-
-  return data.token;
-};
-
-export const getSingleFlightRefreshToken = async (client: RefreshClient): Promise<string> => {
-  if (!activeRefreshPromise) {
-    activeRefreshPromise = requestTokenRefresh(client).finally(() => {
-      activeRefreshPromise = null;
+  try {
+    const data = await client.post<RefreshResponse, { refreshToken: string }>(API_ENDPOINTS.auth.refresh, {
+      refreshToken,
     });
-  }
 
-  return activeRefreshPromise;
+    tokenStorage.setTokens({
+      accessToken: data.token,
+      refreshToken: data.refreshToken,
+    });
+
+    flushQueueSuccess(data.token);
+    return data.token;
+  } catch (error) {
+    const refreshError = error instanceof Error ? error : new Error("REFRESH_FAILED");
+    flushQueueError(refreshError);
+    throw refreshError;
+  } finally {
+    isRefreshing = false;
+  }
 };

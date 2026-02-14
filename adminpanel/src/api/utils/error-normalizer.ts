@@ -1,40 +1,41 @@
 import { ApiHttpError } from "@/src/api/client/axios-client";
 
-import type { ApiErrorPayload } from "@/src/api/types/common";
+import type { ApiErrorPayload, NormalizedApiErrorShape } from "@/src/api/types/common";
 
-const UNKNOWN_ERROR_CODE = "UNKNOWN_ERROR";
-const NETWORK_ERROR_CODE = "NETWORK_ERROR";
+const ERROR_CODES = {
+  unknown: "UNKNOWN_ERROR",
+  network: "NETWORK_ERROR",
+  cancelled: "REQUEST_CANCELLED",
+} as const;
 
-export interface NormalizedApiError {
-  code: string;
-  message: string;
-  status: number;
-  details?: unknown;
-}
-
-export const normalizeApiError = (error: unknown): NormalizedApiError => {
+export const normalizeApiError = (error: unknown): NormalizedApiErrorShape => {
   if (error instanceof ApiHttpError) {
     const payload = error.data as ApiErrorPayload | undefined;
 
     return {
-      code: payload?.code ?? UNKNOWN_ERROR_CODE,
+      code: payload?.code ?? ERROR_CODES.unknown,
       message: payload?.message ?? error.message,
-      status: payload?.status ?? error.status,
       details: payload?.details,
+      status: payload?.status ?? error.status,
+    };
+  }
+
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return {
+      code: ERROR_CODES.cancelled,
+      message: ERROR_CODES.cancelled,
     };
   }
 
   if (error instanceof Error) {
     return {
-      code: NETWORK_ERROR_CODE,
+      code: ERROR_CODES.network,
       message: error.message,
-      status: 0,
     };
   }
 
   return {
-    code: UNKNOWN_ERROR_CODE,
-    message: UNKNOWN_ERROR_CODE,
-    status: 0,
+    code: ERROR_CODES.unknown,
+    message: ERROR_CODES.unknown,
   };
 };

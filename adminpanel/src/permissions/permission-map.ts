@@ -1,25 +1,27 @@
+import { PERMISSIONS } from "@/src/constants/permissions";
+import { ROLES } from "@/src/constants/roles";
 import { APP_ROUTES } from "@/src/constants/routes";
 
 import type { PermissionRule } from "@/src/permissions/types";
 
 export const PERMISSION_MAP: Partial<Record<string, PermissionRule>> = {
   [APP_ROUTES.app.dashboard]: {
-    allowedRoles: ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"],
+    allowedRoles: [ROLES.superAdmin, ROLES.admin, ROLES.manager, ROLES.viewer],
   },
   [APP_ROUTES.app.users]: {
-    allowedRoles: ["SUPER_ADMIN", "ADMIN"],
-    requiredPermissions: ["users.read"],
+    allowedRoles: [ROLES.superAdmin, ROLES.admin],
+    requiredPermissions: [PERMISSIONS.usersRead],
   },
   [APP_ROUTES.app.roles]: {
-    allowedRoles: ["SUPER_ADMIN"],
-    requiredPermissions: ["roles.manage"],
+    allowedRoles: [ROLES.superAdmin],
+    requiredPermissions: [PERMISSIONS.rolesManage],
   },
   [APP_ROUTES.app.orders]: {
-    allowedRoles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
-    requiredPermissions: ["orders.read"],
+    allowedRoles: [ROLES.superAdmin, ROLES.admin, ROLES.manager],
+    requiredPermissions: [PERMISSIONS.ordersRead],
   },
   [APP_ROUTES.app.reports]: {
-    allowedRoles: ["SUPER_ADMIN", "ADMIN", "MANAGER"],
-    requiredPermissions: ["reports.read"],
+    allowedRoles: [ROLES.superAdmin, ROLES.admin, ROLES.manager],
+    requiredPermissions: [PERMISSIONS.reportsRead],
   },
 } as const;
