@@ -28,11 +28,15 @@ export const DropdownMenu = ({ triggerLabel, items }: { triggerLabel: string; it
         {triggerLabel}
       </Button>
       {open ? (
-        <ul className="absolute right-0 z-20 mt-2 min-w-40 rounded-md border border-border bg-surface p-1 shadow-md" role="menu" aria-label={triggerLabel}>
+        <ul
+          className="absolute right-0 z-20 mt-2 min-w-40 rounded-lg border border-border bg-surface p-1 shadow-[0_10px_30px_rgba(15,23,42,0.14)]"
+          role="menu"
+          aria-label={triggerLabel}
+        >
           {items.map((item) => (
             <li key={item.label}>
               <button
-                className="w-full rounded px-3 py-2 text-left text-sm text-text-primary transition-colors duration-200 hover:bg-surface-muted"
+                className="w-full rounded-md px-3 py-2 text-left text-sm text-text-primary transition-colors duration-200 hover:bg-surface-muted"
                 role="menuitem"
                 onClick={() => {
                   item.onSelect();

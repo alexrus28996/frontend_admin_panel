@@ -17,9 +17,11 @@ export const EmptyState = ({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-10 text-center">
-      <p className="text-base font-semibold text-text-primary">{title ?? t("common.noData")}</p>
-      <p className="mt-2 text-sm text-text-secondary">{description ?? t("common.emptyDescription")}</p>
+    <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-12 text-center">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-text-secondary">◌</div>
+      <p className="text-lg font-semibold text-text-primary">{title ?? t("common.noData")}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">{description ?? t("common.emptyDescription")}</p>
+      <p className="mt-2 text-xs text-text-secondary">{t("table.emptyHint")}</p>
       {actionLabel && onAction ? (
         <Button className="mt-4" variant="secondary" onClick={onAction} ariaLabel={actionLabel}>
           {actionLabel}

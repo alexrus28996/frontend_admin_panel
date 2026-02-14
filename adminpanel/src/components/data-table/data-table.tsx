@@ -68,20 +68,24 @@ export const DataTable = <TItem,>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 md:flex-row md:items-center md:justify-between">
-        <Input
-          id="table-search-input"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          ariaLabel={t("table.searchPlaceholder")}
-          placeholder={t("table.searchPlaceholder")}
-          className="md:max-w-sm"
-        />
-        {toolbarSlot ? <div className="flex items-center gap-2" aria-label="Toolbar region">{toolbarSlot}</div> : null}
+      <div className="rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {onSearchChange ? (
+            <Input
+              id="table-search-input"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              ariaLabel={t("table.searchPlaceholder")}
+              placeholder={t("table.searchPlaceholder")}
+              className="md:max-w-sm"
+            />
+          ) : <div />}
+          {toolbarSlot ? <div className="flex items-center gap-2" aria-label={t("navigation.topbarMenuLabel")}>{toolbarSlot}</div> : null}
+        </div>
       </div>
 
       {filterSlot ? (
-        <section aria-label={t("table.filters")} className="rounded-xl border border-border bg-surface p-3">
+        <section aria-label={t("table.filters")} className="rounded-xl border border-border bg-surface p-4">
           {filterSlot}
         </section>
       ) : null}
@@ -89,50 +93,53 @@ export const DataTable = <TItem,>({
       {error ? <AlertBanner variant="error" title={t("errors.general")} description={error} /> : null}
 
       {loading ? (
-        <TableSkeleton />
+        <TableSkeleton rows={6} />
       ) : rows.length ? (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <table className="min-w-full text-left text-sm" aria-label={t("table.dataGrid")}>
-            <thead className="sticky top-0 bg-surface-muted">
-              <tr>
-                {columns.map((column) => (
-                  <th key={column.id} className="px-4 py-3 font-semibold text-text-secondary">
-                    {column.header}
-                  </th>
-                ))}
-                {rowActions ? <th className="px-4 py-3 text-right font-semibold text-text-secondary">Actions</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <tr key={`row-${index}`} className="border-t border-border transition-colors duration-200 hover:bg-surface-muted/50">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+          <div className="max-h-[540px] overflow-auto">
+            <table className="min-w-full text-left text-sm" aria-label={t("table.dataGrid")}>
+              <thead className="sticky top-0 z-[1] bg-surface-elevated">
+                <tr>
                   {columns.map((column) => (
-                    <td key={column.id} className="px-4 py-3 text-text-primary">
-                      {column.cell(row)}
-                    </td>
+                    <th key={column.id} className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                      {column.header}
+                    </th>
                   ))}
-                  {rowActions ? (
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu triggerLabel="⋯" items={rowActions(row)} />
-                    </td>
-                  ) : null}
+                  {rowActions ? <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary">{t("table.actions")}</th> : null}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={`row-${index}`} className="border-t border-border/80 transition-colors duration-200 hover:bg-surface-muted/55">
+                    {columns.map((column) => (
+                      <td key={column.id} className="px-4 py-2.5 align-middle text-sm text-text-primary">
+                        {column.cell(row)}
+                      </td>
+                    ))}
+                    {rowActions ? (
+                      <td className="px-4 py-2.5 text-right">
+                        <DropdownMenu triggerLabel="⋯" items={rowActions(row)} />
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
-        <EmptyState />
+        <EmptyState title={t("table.emptyTitle")} description={t("table.emptyDescription")} actionLabel={undefined} onAction={undefined} />
       )}
 
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm text-text-secondary">{paginationLabel}</p>
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-text-secondary">
+      <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2 rounded-xl border border-border bg-surface px-4 py-3">
+          <p className="text-xs text-text-secondary">{paginationLabel}</p>
+          <p className="text-xs text-text-secondary">
             {t("table.rowsPerPage")}: {pagination.pageSize}
           </p>
           <Button
             variant="secondary"
+            className="h-9"
             disabled={pagination.page <= 1}
             onClick={() => onPaginationChange({ page: pagination.page - 1, pageSize: pagination.pageSize })}
           >
@@ -140,6 +147,7 @@ export const DataTable = <TItem,>({
           </Button>
           <Button
             variant="secondary"
+            className="h-9"
             disabled={pagination.page >= pagination.totalPages}
             onClick={() => onPaginationChange({ page: pagination.page + 1, pageSize: pagination.pageSize })}
           >

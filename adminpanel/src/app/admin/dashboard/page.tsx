@@ -7,7 +7,7 @@ import { Skeleton } from "@/src/components/states/skeleton";
 import { AlertBanner } from "@/src/components/ui/alert-banner";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
-import { PageTitle, SectionTitle, Text } from "@/src/components/ui/typography";
+import { CardTitle, MutedText, PageTitle, SectionTitle, Text } from "@/src/components/ui/typography";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { dashboardService } from "@/src/modules/dashboard/services/dashboard.service";
 
@@ -35,9 +35,7 @@ const createColumns = (rows: DashboardReportRow[] | null | undefined): DataTable
     return [];
   }
 
-  const firstRow = rows[0];
-
-  return Object.keys(firstRow).map((key) => ({
+  return Object.keys(rows[0]).map((key) => ({
     id: key,
     header: key,
     cell: (item) => formatCellValue(item[key]),
@@ -72,11 +70,9 @@ export default function DashboardPage() {
       try {
         setMetricsLoading(true);
         setMetricsError(null);
-        const response = await dashboardService.getMetrics();
-        setMetrics(response);
+        setMetrics(await dashboardService.getMetrics());
       } catch (error) {
-        const message = error instanceof Error ? error.message : t("errors.general");
-        setMetricsError(message);
+        setMetricsError(error instanceof Error ? error.message : t("errors.general"));
       } finally {
         setMetricsLoading(false);
       }
@@ -98,8 +94,7 @@ export default function DashboardPage() {
 
         setSalesRows(response);
       } catch (error) {
-        const message = error instanceof Error ? error.message : t("errors.general");
-        setSalesError(message);
+        setSalesError(error instanceof Error ? error.message : t("errors.general"));
       } finally {
         setSalesLoading(false);
       }
@@ -113,11 +108,9 @@ export default function DashboardPage() {
       try {
         setTopProductsLoading(true);
         setTopProductsError(null);
-        const response = await dashboardService.getTopProducts();
-        setTopProductsRows(response);
+        setTopProductsRows(await dashboardService.getTopProducts());
       } catch (error) {
-        const message = error instanceof Error ? error.message : t("errors.general");
-        setTopProductsError(message);
+        setTopProductsError(error instanceof Error ? error.message : t("errors.general"));
       } finally {
         setTopProductsLoading(false);
       }
@@ -131,11 +124,9 @@ export default function DashboardPage() {
       try {
         setTopCustomersLoading(true);
         setTopCustomersError(null);
-        const response = await dashboardService.getTopCustomers();
-        setTopCustomersRows(response);
+        setTopCustomersRows(await dashboardService.getTopCustomers());
       } catch (error) {
-        const message = error instanceof Error ? error.message : t("errors.general");
-        setTopCustomersError(message);
+        setTopCustomersError(error instanceof Error ? error.message : t("errors.general"));
       } finally {
         setTopCustomersLoading(false);
       }
@@ -144,20 +135,23 @@ export default function DashboardPage() {
     void loadTopCustomers();
   }, [t]);
 
-  const metricEntries = useMemo(() => Object.entries(metrics ?? {}), [metrics]);
+  const metricEntries = useMemo(() => Object.entries(metrics ?? {}).slice(0, 4), [metrics]);
   const salesColumns = useMemo(() => createColumns(salesRows), [salesRows]);
   const topProductsColumns = useMemo(() => createColumns(topProductsRows), [topProductsRows]);
   const topCustomersColumns = useMemo(() => createColumns(topCustomersRows), [topCustomersRows]);
 
   return (
-    <div className="space-y-6">
-      <PageTitle>{t("dashboard.title")}</PageTitle>
+    <div className="space-y-8">
+      <section className="space-y-1">
+        <PageTitle>{t("dashboard.title")}</PageTitle>
+        <MutedText>{t("dashboard.kpis.subtitle")}</MutedText>
+      </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label={t("dashboard.kpis.section")}>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={t("dashboard.kpis.section")}>
         {metricsLoading
           ? Array.from({ length: 4 }).map((_, index) => (
               <Card key={`kpi-skeleton-${index}`}>
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-3">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-8 w-32" />
                 </CardContent>
@@ -165,57 +159,39 @@ export default function DashboardPage() {
             ))
           : metricsError
             ? (
-              <div className="sm:col-span-2 lg:col-span-4">
+              <div className="sm:col-span-2 xl:col-span-4">
                 <AlertBanner title={t("dashboard.kpis.errorTitle")} description={metricsError} variant="error" />
               </div>
               )
-            : metricEntries.length
-              ? metricEntries.map(([key, value]) => (
+            : metricEntries.map(([key, value]) => {
+                const numericValue = Number(value);
+                const isPositive = Number.isFinite(numericValue) ? numericValue >= 0 : true;
+
+                return (
                   <Card key={`metric-${key}`}>
-                    <CardContent>
-                      <Text className="text-text-secondary">{key}</Text>
-                      <Text className="text-2xl font-semibold">{formatCellValue(value as DashboardPrimitive)}</Text>
+                    <CardContent className="space-y-2">
+                      <MutedText>{key}</MutedText>
+                      <Text className="text-3xl font-semibold leading-none">{formatCellValue(value as DashboardPrimitive)}</Text>
+                      <div className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${isPositive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                        {isPositive ? t("common.trendUp") : t("common.trendDown")} · {t("dashboard.kpis.trendPositive")}
+                      </div>
                     </CardContent>
                   </Card>
-                ))
-              : (
-                <div className="sm:col-span-2 lg:col-span-4">
-                  <Card>
-                    <CardContent>
-                      <Text>{t("dashboard.kpis.empty")}</Text>
-                    </CardContent>
-                  </Card>
-                </div>
-                )}
+                );
+              })}
       </section>
 
       <Card>
-        <CardHeader>
-          <SectionTitle>{t("dashboard.sales.filtersTitle")}</SectionTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Input
-              id="sales-from-date"
-              type="date"
-              ariaLabel={t("dashboard.sales.from")}
-              value={fromDate}
-              onChange={(event) => setFromDate(event.target.value)}
-            />
-            <Input
-              id="sales-to-date"
-              type="date"
-              ariaLabel={t("dashboard.sales.to")}
-              value={toDate}
-              onChange={(event) => setToDate(event.target.value)}
-            />
-            <div className="w-full">
-              <label htmlFor="sales-group-by" className="mb-1 block text-sm text-text-secondary">
-                {t("dashboard.sales.groupBy")}
-              </label>
+        <CardHeader
+          description={t("dashboard.sales.subtitle")}
+          actions={(
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              <Input id="sales-from-date" type="date" ariaLabel={t("dashboard.sales.from")} value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+              <Input id="sales-to-date" type="date" ariaLabel={t("dashboard.sales.to")} value={toDate} onChange={(event) => setToDate(event.target.value)} />
               <select
                 id="sales-group-by"
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-text-primary"
+                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-text-primary transition-all duration-200 hover:border-focus-ring/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                aria-label={t("dashboard.sales.groupBy")}
                 value={groupBy}
                 onChange={(event) => setGroupBy(event.target.value as GroupBy)}
               >
@@ -224,12 +200,8 @@ export default function DashboardPage() {
                 <option value="month">{t("dashboard.sales.groupByOptions.month")}</option>
               </select>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
+          )}
+        >
           <SectionTitle>{t("dashboard.sales.title")}</SectionTitle>
         </CardHeader>
         <CardContent>
@@ -238,49 +210,45 @@ export default function DashboardPage() {
             rows={salesRows}
             loading={salesLoading}
             error={salesError}
-            searchValue=""
             pagination={defaultPagination}
-            onSearchChange={() => undefined}
             onPaginationChange={() => undefined}
           />
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <SectionTitle>{t("dashboard.topProducts.title")}</SectionTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable<DashboardReportRow>
-            columns={topProductsColumns}
-            rows={topProductsRows}
-            loading={topProductsLoading}
-            error={topProductsError}
-            searchValue=""
-            pagination={defaultPagination}
-            onSearchChange={() => undefined}
-            onPaginationChange={() => undefined}
-          />
-        </CardContent>
-      </Card>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Card>
+          <CardHeader description={t("dashboard.topProducts.subtitle")}>
+            <CardTitle>{t("dashboard.topProducts.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataTable<DashboardReportRow>
+              columns={topProductsColumns}
+              rows={topProductsRows}
+              loading={topProductsLoading}
+              error={topProductsError}
+              pagination={defaultPagination}
+              onPaginationChange={() => undefined}
+            />
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <SectionTitle>{t("dashboard.topCustomers.title")}</SectionTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable<DashboardReportRow>
-            columns={topCustomersColumns}
-            rows={topCustomersRows}
-            loading={topCustomersLoading}
-            error={topCustomersError}
-            searchValue=""
-            pagination={defaultPagination}
-            onSearchChange={() => undefined}
-            onPaginationChange={() => undefined}
-          />
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader description={t("dashboard.topCustomers.subtitle")}>
+            <CardTitle>{t("dashboard.topCustomers.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataTable<DashboardReportRow>
+              columns={topCustomersColumns}
+              rows={topCustomersRows}
+              loading={topCustomersLoading}
+              error={topCustomersError}
+              pagination={defaultPagination}
+              onPaginationChange={() => undefined}
+            />
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

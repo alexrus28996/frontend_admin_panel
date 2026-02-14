@@ -17,7 +17,14 @@
     "orders": "Orders",
     "inventory": "Inventory",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "groups": {
+      "overview": "Overview",
+      "management": "Management",
+      "commerce": "Commerce",
+      "system": "System"
+    },
+    "topbarMenuLabel": "Topbar menu"
   },
   "common": {
     "loading": "Loading",
@@ -28,7 +35,15 @@
     "openSidebar": "Open sidebar",
     "closeSidebar": "Close sidebar",
     "closeMenuOverlay": "Close menu overlay",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "search": "Search",
+    "menu": "Menu",
+    "openUserMenu": "Open user menu",
+    "openThemeMenu": "Open theme settings",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "trendUp": "Up",
+    "trendDown": "Down"
   },
   "auth": {
     "guest": "Guest",
@@ -73,7 +88,12 @@
     "of": "of",
     "rowsPerPage": "Rows per page",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "actions": "Actions",
+    "emptyTitle": "No records found",
+    "emptyDescription": "Try adjusting your search or filters to find what you need.",
+    "emptyHint": "Data appears here once records are available.",
+    "loadingRows": "Loading rows"
   },
   "errors": {
     "general": "Something went wrong",
@@ -98,7 +118,9 @@
     "kpis": {
       "section": "Key performance indicators",
       "errorTitle": "Unable to load KPI metrics",
-      "empty": "No KPI metrics available for the selected period"
+      "empty": "No KPI metrics available for the selected period",
+      "subtitle": "Performance summary",
+      "trendPositive": "vs previous period"
     },
     "sales": {
       "title": "Sales report",
@@ -116,7 +138,8 @@
         "totalSales": "Total sales",
         "orderCount": "Order count",
         "status": "Status"
-      }
+      },
+      "subtitle": "Revenue and orders overview"
     },
     "topProducts": {
       "title": "Top products",
@@ -125,7 +148,8 @@
         "quantitySold": "Quantity sold",
         "revenue": "Revenue",
         "status": "Status"
-      }
+      },
+      "subtitle": "Best-selling products this period"
     },
     "topCustomers": {
       "title": "Top customers",
@@ -134,7 +158,8 @@
         "orders": "Orders",
         "spent": "Total spent",
         "status": "Status"
-      }
+      },
+      "subtitle": "Most valuable customers this period"
     }
   },
   "users": {
@@ -170,7 +195,10 @@
       "error": "Unable to demote user"
     },
     "detail": {
-      "title": "User details"
+      "title": "User details",
+      "subtitle": "Review profile details and account metadata",
+      "profileCardTitle": "Profile",
+      "permissionsCardTitle": "Permissions"
     },
     "empty": {
       "title": "No users found",
@@ -178,6 +206,15 @@
     },
     "error": {
       "title": "Unable to load users"
+    },
+    "subtitle": "Manage accounts, roles, and permissions",
+    "toolbar": {
+      "filterPlaceholder": "Filter (coming soon)",
+      "invite": "Invite user"
     }
+  },
+  "shell": {
+    "searchPlaceholder": "Search navigation, users, and reports",
+    "breadcrumbSeparator": "/"
   }
 }

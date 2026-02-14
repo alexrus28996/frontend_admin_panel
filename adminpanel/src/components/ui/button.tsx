@@ -3,10 +3,13 @@ import { cn } from "@/src/lib/cn";
 type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
 
 const styles: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-surface hover:opacity-90",
-  secondary: "bg-surface text-text-primary border border-border hover:bg-surface-muted",
-  ghost: "bg-transparent text-text-primary hover:bg-surface-muted",
-  destructive: "bg-destructive text-surface hover:opacity-90",
+  primary:
+    "border border-primary bg-primary text-surface shadow-sm hover:scale-[1.01] hover:brightness-95 active:scale-[0.99]",
+  secondary:
+    "border border-border bg-surface text-text-primary shadow-sm hover:bg-surface-muted hover:scale-[1.01] active:scale-[0.99]",
+  ghost: "border border-transparent bg-transparent text-text-primary hover:bg-surface-muted",
+  destructive:
+    "border border-destructive bg-destructive text-surface shadow-sm hover:brightness-95 hover:scale-[1.01] active:scale-[0.99]",
 };
 
 export const Button = ({
@@ -32,7 +35,7 @@ export const Button = ({
     onClick={onClick}
     aria-label={ariaLabel}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-all duration-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+      "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100",
       styles[variant],
       className,
     )}

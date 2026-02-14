@@ -7,7 +7,8 @@ import { DataTable } from "@/src/components/data-table/data-table";
 import { EmptyState } from "@/src/components/states/empty-state";
 import { AlertBanner } from "@/src/components/ui/alert-banner";
 import { Button } from "@/src/components/ui/button";
-import { PageTitle } from "@/src/components/ui/typography";
+import { Input } from "@/src/components/ui/input";
+import { MutedText, PageTitle } from "@/src/components/ui/typography";
 import { ROLES } from "@/src/constants/roles";
 import { ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
@@ -58,8 +59,7 @@ export default function AdminUsersPage() {
         setTotalItems(response.totalItems);
         setTotalPages(response.totalPages);
       } catch (nextError) {
-        const message = nextError instanceof Error ? nextError.message : t("errors.general");
-        setError(message);
+        setError(nextError instanceof Error ? nextError.message : t("errors.general"));
       } finally {
         setLoading(false);
       }
@@ -73,8 +73,7 @@ export default function AdminUsersPage() {
       setActionLoadingById((prev) => ({ ...prev, [id]: true }));
       await action();
     } catch (nextError) {
-      const message = nextError instanceof Error ? nextError.message : t("errors.general");
-      setError(message);
+      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
     } finally {
       setActionLoadingById((prev) => ({ ...prev, [id]: false }));
     }
@@ -128,32 +127,18 @@ export default function AdminUsersPage() {
           const itemLoading = actionLoadingById[item.id] ?? false;
 
           return (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                ariaLabel={t("users.actions.view")}
-                onClick={() => router.push(ROUTES.admin.userById(item.id as string))}
-              >
-                {t("users.actions.view")}
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="secondary" className="h-8 w-8 px-0" ariaLabel={t("users.actions.view")} onClick={() => router.push(ROUTES.admin.userById(item.id as string))}>
+                ↗
               </Button>
               <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-                <Button
-                  variant="primary"
-                  disabled={itemLoading}
-                  ariaLabel={t("users.actions.promote")}
-                  onClick={() => void onPromote(item.id as string)}
-                >
-                  {itemLoading ? t("users.actions.loading") : t("users.actions.promote")}
+                <Button variant="primary" className="h-8 w-8 px-0" disabled={itemLoading} ariaLabel={t("users.actions.promote")} onClick={() => void onPromote(item.id as string)}>
+                  ↑
                 </Button>
               </RoleGuard>
               <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-                <Button
-                  variant="destructive"
-                  disabled={itemLoading}
-                  ariaLabel={t("users.actions.demote")}
-                  onClick={() => void onDemote(item.id as string)}
-                >
-                  {itemLoading ? t("users.actions.loading") : t("users.actions.demote")}
+                <Button variant="destructive" className="h-8 w-8 px-0" disabled={itemLoading} ariaLabel={t("users.actions.demote")} onClick={() => void onDemote(item.id as string)}>
+                  ↓
                 </Button>
               </RoleGuard>
             </div>
@@ -166,13 +151,26 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle>{t("users.title")}</PageTitle>
+      <section className="space-y-1">
+        <PageTitle>{t("users.title")}</PageTitle>
+        <MutedText>{t("users.subtitle")}</MutedText>
+      </section>
 
       {error ? <AlertBanner variant="error" title={t("users.error.title")} description={error} /> : null}
 
-      {(!loading && rows.length === 0) ? (
-        <EmptyState title={t("users.empty.title")} description={t("users.empty.description")} />
-      ) : null}
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 md:flex-row md:items-center md:justify-between">
+        <div className="w-full md:max-w-sm">
+          <Input id="users-toolbar-search" ariaLabel={t("table.searchPlaceholder")} value={search} placeholder={t("table.searchPlaceholder")} onChange={(event) => setSearch(event.target.value)} />
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="secondary" ariaLabel={t("users.toolbar.filterPlaceholder")}>{t("users.toolbar.filterPlaceholder")}</Button>
+          <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
+            <Button variant="primary" ariaLabel={t("users.toolbar.invite")}>{t("users.toolbar.invite")}</Button>
+          </RoleGuard>
+        </div>
+      </section>
+
+      {(!loading && rows.length === 0) ? <EmptyState title={t("users.empty.title")} description={t("users.empty.description")} /> : null}
 
       <DataTable<UserListItem>
         columns={columns}
