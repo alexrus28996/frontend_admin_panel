@@ -1,4 +1,5 @@
 import { env } from "@/src/config/env";
+import { STORAGE_KEYS } from "@/src/constants/storage-keys";
 
 import type { Nullable } from "@/src/api/types/common";
 import type { TokenPair } from "@/src/auth/types/auth";
@@ -38,6 +39,22 @@ const clearCookie = (name: string): void => {
   document.cookie = `${name}=;path=/;max-age=0;samesite=lax`;
 };
 
+const clearBrowserStorage = (key: string): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(key);
+  window.sessionStorage.removeItem(key);
+};
+
+const allStorageKeys = new Set<string>([
+  STORAGE_KEYS.accessToken,
+  STORAGE_KEYS.refreshToken,
+  env.authCookieName,
+  env.refreshCookieName,
+]);
+
 export const tokenStorage = {
   getAccessToken(): Nullable<string> {
     const cookies = parseCookies();
@@ -52,7 +69,9 @@ export const tokenStorage = {
     setCookie(env.refreshCookieName, tokens.refreshToken);
   },
   clearTokens(): void {
-    clearCookie(env.authCookieName);
-    clearCookie(env.refreshCookieName);
+    allStorageKeys.forEach((key) => {
+      clearCookie(key);
+      clearBrowserStorage(key);
+    });
   },
 };

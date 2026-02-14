@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
 
 import { normalizeApiError } from "@/src/api/utils/error-normalizer";
 import { useAuth } from "@/src/auth/providers/auth-provider";
@@ -13,64 +15,39 @@ import { Input } from "@/src/components/ui/input";
 import { MutedText, PageTitle, Text } from "@/src/components/ui/typography";
 import { APP_ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
+import { loginSchema } from "@/src/schemas/auth/login.schema";
 
-interface LoginFormState {
-  email: string;
-  password: string;
-}
-
-interface LoginFormErrors {
-  email?: string;
-  password?: string;
-}
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import type { LoginSchemaInput } from "@/src/schemas/auth/login.schema";
 
 export default function LoginPage() {
   const { t } = useI18n();
   const { login } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState<LoginFormState>({ email: "", password: "" });
-  const [errors, setErrors] = useState<LoginFormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const validate = (): LoginFormErrors => {
-    const nextErrors: LoginFormErrors = {};
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginSchemaInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    mode: "onSubmit",
+  });
 
-    if (!form.email) {
-      nextErrors.email = t("validation.required");
-    } else if (!emailRegex.test(form.email)) {
-      nextErrors.email = t("validation.invalidEmail");
-    }
-
-    if (!form.password) {
-      nextErrors.password = t("validation.required");
-    }
-
-    return nextErrors;
-  };
-
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const nextErrors = validate();
-    setErrors(nextErrors);
+  const onSubmit = async (values: LoginSchemaInput) => {
     setServerError(null);
 
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
-
     try {
-      setIsSubmitting(true);
-      await login(form.email, form.password);
+      await login(values.email, values.password);
       router.replace(APP_ROUTES.admin.dashboard);
     } catch (error) {
       const normalized = normalizeApiError(error);
       setServerError(normalized.message || t("errors.auth.invalidCredentials"));
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -89,7 +66,12 @@ export default function LoginPage() {
             <MutedText className="mt-1">{t("auth.login.subtitle")}</MutedText>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4" onSubmit={onSubmit} noValidate aria-label={t("auth.login.formAria") }>
+            <form
+              className="space-y-4"
+              onSubmit={handleSubmit(onSubmit)}
+              noValidate
+              aria-label={t("auth.login.formAria")}
+            >
               {serverError ? (
                 <AlertBanner
                   variant="error"
@@ -104,14 +86,12 @@ export default function LoginPage() {
                 </label>
                 <Input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  value={form.email}
-                  onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
                   ariaLabel={t("auth.login.emailAria")}
                   placeholder={t("auth.login.emailPlaceholder")}
-                  error={errors.email}
+                  error={errors.email?.message ? t(errors.email.message) : undefined}
+                  {...register("email")}
                 />
               </div>
 
@@ -122,15 +102,13 @@ export default function LoginPage() {
                 <div className="relative">
                   <Input
                     id="password"
-                    name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    value={form.password}
-                    onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
                     ariaLabel={t("auth.login.passwordAria")}
                     placeholder={t("auth.login.passwordPlaceholder")}
-                    error={errors.password}
+                    error={errors.password?.message ? t(errors.password.message) : undefined}
                     className="pr-20"
+                    {...register("password")}
                   />
                   <Button
                     type="button"
@@ -144,12 +122,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-                ariaLabel={t("auth.login.submit")}
-              >
+              <Button type="submit" className="w-full" disabled={isSubmitting} ariaLabel={t("auth.login.submit")}>
                 {isSubmitting ? t("common.loading") : t("auth.login.submit")}
               </Button>
             </form>

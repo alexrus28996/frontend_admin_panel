@@ -23,21 +23,33 @@ export const authService = {
   async login(input: LoginInput): Promise<AuthSession> {
     const data = await apiClient.post<LoginResponse, LoginInput>(API_ENDPOINTS.auth.login, input);
 
+    console.info("[auth-service] login payload shape", {
+      hasToken: Boolean(data?.token),
+      hasRefreshToken: Boolean(data?.refreshToken),
+      hasUser: Boolean(data?.user),
+      userKeys: data?.user ? Object.keys(data.user) : [],
+    });
+
     return {
       accessToken: data.token,
       refreshToken: data.refreshToken,
       user: data.user,
     };
   },
-  async logout(refreshToken: string): Promise<void> {
-    await apiClient.post<unknown, { refreshToken: string }>(API_ENDPOINTS.auth.logout, { refreshToken });
+  async logout(): Promise<void> {
+    await apiClient.post<unknown>(API_ENDPOINTS.auth.logout);
   },
   async me(): Promise<AuthUser> {
     return apiClient.get<AuthUser>(API_ENDPOINTS.auth.me);
   },
-  async refresh(refreshToken: string): Promise<RefreshResponse> {
-    return apiClient.post<RefreshResponse, { refreshToken: string }>(API_ENDPOINTS.auth.refresh, {
-      refreshToken,
+  async refresh(): Promise<RefreshResponse> {
+    const data = await apiClient.post<RefreshResponse>(API_ENDPOINTS.auth.refresh);
+
+    console.info("[auth-service] refresh payload shape", {
+      hasToken: Boolean(data?.token),
+      hasRefreshToken: Boolean(data?.refreshToken),
     });
+
+    return data;
   },
 };

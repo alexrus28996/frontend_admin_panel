@@ -33,18 +33,10 @@ export const refreshAccessToken = async (client: RefreshClient): Promise<string>
     return enqueueWaitingRequest();
   }
 
-  const refreshToken = tokenStorage.getRefreshToken();
-
-  if (!refreshToken) {
-    throw new Error("MISSING_REFRESH_TOKEN");
-  }
-
   isRefreshing = true;
 
   try {
-    const data = await client.post<RefreshResponse, { refreshToken: string }>(API_ENDPOINTS.auth.refresh, {
-      refreshToken,
-    });
+    const data = await client.post<RefreshResponse>(API_ENDPOINTS.auth.refresh);
 
     tokenStorage.setTokens({
       accessToken: data.token,

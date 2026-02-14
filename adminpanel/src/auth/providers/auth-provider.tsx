@@ -72,12 +72,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const logout = useCallback(async () => {
-    const refreshToken = tokenStorage.getRefreshToken();
-
     try {
-      if (refreshToken) {
-        await authService.logout(refreshToken);
-      }
+      await authService.logout();
     } finally {
       clearSession();
     }

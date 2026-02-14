@@ -69,6 +69,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
     ...options,
     headers,
     signal: withTimeoutSignal(options.timeoutMs ?? env.requestTimeoutMs, options.signal),
+    credentials: "include",
   });
 
   const contentType = response.headers.get("content-type") ?? "";

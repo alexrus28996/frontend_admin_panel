@@ -17,21 +17,36 @@ const hasAuthIndicator = (request: NextRequest): boolean => {
   return Boolean(accessTokenCookie || bearerToken?.startsWith("Bearer "));
 };
 
+const isStaticAssetRequest = (pathname: string): boolean => /\.[^/]+$/.test(pathname);
+
+const redirectIfDifferent = (request: NextRequest, targetPath: string): NextResponse => {
+  if (request.nextUrl.pathname === targetPath) {
+    return NextResponse.next();
+  }
+
+  return NextResponse.redirect(new URL(targetPath, request.url));
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isStaticAssetRequest(pathname)) {
+    return NextResponse.next();
+  }
+
   const isAuthenticated = hasAuthIndicator(request);
 
   if (isPublicRoute(pathname) && isAuthenticated && pathname === APP_ROUTES.auth.login) {
-    return NextResponse.redirect(new URL(DEFAULT_AUTHENTICATED_ROUTE, request.url));
+    return redirectIfDifferent(request, DEFAULT_AUTHENTICATED_ROUTE);
   }
 
   if (isProtectedApplicationRoute(pathname) && !isAuthenticated) {
-    return NextResponse.redirect(new URL(APP_ROUTES.auth.login, request.url));
+    return redirectIfDifferent(request, APP_ROUTES.auth.login);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
