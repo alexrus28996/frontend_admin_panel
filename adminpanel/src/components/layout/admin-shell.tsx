@@ -191,6 +191,10 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
           return item.href === ROUTES.admin.dashboard;
         }
 
+        if (!item.roles || item.roles.length === 0) {
+          return true;
+        }
+
         return hasAnyRole(user.roles, item.roles);
       }),
     [user],

@@ -12,7 +12,7 @@ export interface NavigationItem {
   href: string;
   labelKey: MessageKey;
   icon: NavigationIcon;
-  roles: AppRole[];
+  roles?: AppRole[];
 }
 
 export const NAVIGATION_GROUP_LABELS: Record<NavigationGroup, MessageKey> = {
@@ -35,7 +35,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     href: ROUTES.admin.users,
     labelKey: "navigation.users",
     icon: "users",
-    roles: [ROLES.superAdmin, ROLES.admin],
+    roles: undefined,
   },
   {
     group: "system",

@@ -30,6 +30,8 @@ const readStringField = (data: Record<string, unknown>, keys: string[]): string 
 };
 
 export default function AdminUsersPage() {
+  console.log("Users page mounted");
+
   const { t } = useI18n();
   const router = useRouter();
 
