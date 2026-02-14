@@ -3,7 +3,6 @@ import { normalizeApiError } from "@/src/api/utils/error-normalizer";
 import { tokenStorage } from "@/src/auth/storage/token-storage";
 import { env } from "@/src/config/env";
 import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
-import { APP_ROUTES } from "@/src/constants/routes";
 
 export class ApiHttpError extends Error {
   status?: number;
@@ -28,11 +27,6 @@ const nonRefreshableEndpoints = new Set<string>([
   API_ENDPOINTS.auth.refresh,
 ]);
 
-const redirectToSessionExpired = (): void => {
-  if (typeof window !== "undefined") {
-    window.location.replace(APP_ROUTES.auth.sessionExpired);
-  }
-};
 
 const withTimeoutSignal = (timeoutMs: number, externalSignal?: AbortSignal | null): AbortSignal => {
   const controller = new AbortController();
@@ -85,7 +79,13 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
 
   if (shouldAttemptRefresh) {
     try {
-      const nextToken = await refreshAccessToken(apiClient);
+      const nextToken = await refreshAccessToken({
+        refresh: (refreshToken: string) =>
+          apiClient.post<{ token: string; refreshToken: string }, { refreshToken: string }>(
+            API_ENDPOINTS.auth.refresh,
+            { refreshToken },
+          ),
+      });
       headers.set("Authorization", `Bearer ${nextToken}`);
 
       return request<TResponse>(path, {
@@ -94,8 +94,6 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
         headers,
       });
     } catch (error) {
-      tokenStorage.clearTokens();
-      redirectToSessionExpired();
       throw normalizeApiError(error);
     }
   }

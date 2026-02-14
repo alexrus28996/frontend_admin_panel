@@ -1,5 +1,5 @@
 import { tokenStorage } from "@/src/auth/storage/token-storage";
-import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
+import { APP_ROUTES } from "@/src/constants/routes";
 
 interface RefreshResponse {
   token: string;
@@ -7,7 +7,7 @@ interface RefreshResponse {
 }
 
 interface RefreshClient {
-  post: <TResponse, TPayload = unknown>(path: string, payload?: TPayload, signal?: AbortSignal) => Promise<TResponse>;
+  refresh: (refreshToken: string) => Promise<RefreshResponse>;
 }
 
 let isRefreshing = false;
@@ -28,15 +28,31 @@ const enqueueWaitingRequest = (): Promise<string> =>
     waitingQueue.push({ resolve, reject });
   });
 
+const handleRefreshFailure = (error: Error): never => {
+  tokenStorage.clearTokens();
+
+  if (typeof window !== "undefined") {
+    window.location.replace(APP_ROUTES.auth.sessionExpired);
+  }
+
+  throw error;
+};
+
 export const refreshAccessToken = async (client: RefreshClient): Promise<string> => {
   if (isRefreshing) {
     return enqueueWaitingRequest();
   }
 
+  const refreshToken = tokenStorage.getRefreshToken();
+
+  if (!refreshToken) {
+    handleRefreshFailure(new Error("AUTH_REFRESH_TOKEN_MISSING"));
+  }
+
   isRefreshing = true;
 
   try {
-    const data = await client.post<RefreshResponse>(API_ENDPOINTS.auth.refresh);
+    const data = await client.refresh(refreshToken);
 
     tokenStorage.setTokens({
       accessToken: data.token,
@@ -46,9 +62,9 @@ export const refreshAccessToken = async (client: RefreshClient): Promise<string>
     flushQueueSuccess(data.token);
     return data.token;
   } catch (error) {
-    const refreshError = error instanceof Error ? error : new Error("REFRESH_FAILED");
+    const refreshError = error instanceof Error ? error : new Error("AUTH_REFRESH_FAILED");
     flushQueueError(refreshError);
-    throw refreshError;
+    handleRefreshFailure(refreshError);
   } finally {
     isRefreshing = false;
   }

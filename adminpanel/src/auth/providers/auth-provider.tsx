@@ -72,23 +72,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const logout = useCallback(async () => {
+    const refreshToken = tokenStorage.getRefreshToken();
+
     try {
-      await authService.logout();
+      if (refreshToken) {
+        await authService.logout(refreshToken);
+      }
     } finally {
       clearSession();
     }
   }, [clearSession]);
 
   useEffect(() => {
-    const accessToken = tokenStorage.getAccessToken();
+    const bootstrap = async () => {
+      const accessToken = tokenStorage.getAccessToken();
+      const refreshToken = tokenStorage.getRefreshToken();
 
-    if (!accessToken) {
-      setState({ isLoading: false, isAuthenticated: false, user: null });
-      return;
-    }
+      if (!accessToken && !refreshToken) {
+        setState({ isLoading: false, isAuthenticated: false, user: null });
+        return;
+      }
 
-    void refreshProfile();
-  }, [refreshProfile]);
+      if (!accessToken && refreshToken) {
+        try {
+          const refreshedSession = await authService.refresh(refreshToken);
+          tokenStorage.setTokens({
+            accessToken: refreshedSession.token,
+            refreshToken: refreshedSession.refreshToken,
+          });
+        } catch {
+          clearSession();
+          router.replace(APP_ROUTES.auth.sessionExpired);
+          return;
+        }
+      }
+
+      await refreshProfile();
+    };
+
+    void bootstrap();
+  }, [clearSession, refreshProfile, router]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

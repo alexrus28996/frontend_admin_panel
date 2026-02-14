@@ -14,21 +14,30 @@ interface LoginResponse {
   user: AuthUser;
 }
 
+interface RefreshInput {
+  refreshToken: string;
+}
+
 interface RefreshResponse {
   token: string;
   refreshToken: string;
 }
 
+interface MeResponse {
+  user: AuthUser;
+}
+
+const resolveUser = (response: AuthUser | MeResponse): AuthUser => {
+  if ("user" in response) {
+    return response.user;
+  }
+
+  return response;
+};
+
 export const authService = {
   async login(input: LoginInput): Promise<AuthSession> {
     const data = await apiClient.post<LoginResponse, LoginInput>(API_ENDPOINTS.auth.login, input);
-
-    console.info("[auth-service] login payload shape", {
-      hasToken: Boolean(data?.token),
-      hasRefreshToken: Boolean(data?.refreshToken),
-      hasUser: Boolean(data?.user),
-      userKeys: data?.user ? Object.keys(data.user) : [],
-    });
 
     return {
       accessToken: data.token,
@@ -36,20 +45,14 @@ export const authService = {
       user: data.user,
     };
   },
-  async logout(): Promise<void> {
-    await apiClient.post<unknown>(API_ENDPOINTS.auth.logout);
+  async logout(refreshToken: string): Promise<void> {
+    await apiClient.post<unknown, RefreshInput>(API_ENDPOINTS.auth.logout, { refreshToken });
   },
   async me(): Promise<AuthUser> {
-    return apiClient.get<AuthUser>(API_ENDPOINTS.auth.me);
+    const data = await apiClient.get<AuthUser | MeResponse>(API_ENDPOINTS.auth.me);
+    return resolveUser(data);
   },
-  async refresh(): Promise<RefreshResponse> {
-    const data = await apiClient.post<RefreshResponse>(API_ENDPOINTS.auth.refresh);
-
-    console.info("[auth-service] refresh payload shape", {
-      hasToken: Boolean(data?.token),
-      hasRefreshToken: Boolean(data?.refreshToken),
-    });
-
-    return data;
+  async refresh(refreshToken: string): Promise<RefreshResponse> {
+    return apiClient.post<RefreshResponse, RefreshInput>(API_ENDPOINTS.auth.refresh, { refreshToken });
   },
 };

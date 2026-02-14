@@ -1,77 +1,53 @@
-import { env } from "@/src/config/env";
 import { STORAGE_KEYS } from "@/src/constants/storage-keys";
 
 import type { Nullable } from "@/src/api/types/common";
 import type { TokenPair } from "@/src/auth/types/auth";
 
-const cookieMaxAgeSeconds = 60 * 60 * 24 * 7;
-
-const parseCookies = (): Record<string, string> => {
-  if (typeof document === "undefined") {
-    return {};
-  }
-
-  return document.cookie.split(";").reduce<Record<string, string>>((acc, part) => {
-    const [rawKey, rawValue] = part.split("=");
-
-    if (!rawKey || typeof rawValue === "undefined") {
-      return acc;
-    }
-
-    acc[rawKey.trim()] = decodeURIComponent(rawValue.trim());
-    return acc;
-  }, {});
+const getFromStorage = (storage: Storage, key: string): Nullable<string> => {
+  const value = storage.getItem(key);
+  return value && value.length > 0 ? value : null;
 };
 
-const setCookie = (name: string, value: string): void => {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  document.cookie = `${name}=${encodeURIComponent(value)};path=/;max-age=${cookieMaxAgeSeconds};samesite=lax`;
+const removeFromStorage = (storage: Storage, key: string): void => {
+  storage.removeItem(key);
 };
-
-const clearCookie = (name: string): void => {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  document.cookie = `${name}=;path=/;max-age=0;samesite=lax`;
-};
-
-const clearBrowserStorage = (key: string): void => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.removeItem(key);
-  window.sessionStorage.removeItem(key);
-};
-
-const allStorageKeys = new Set<string>([
-  STORAGE_KEYS.accessToken,
-  STORAGE_KEYS.refreshToken,
-  env.authCookieName,
-  env.refreshCookieName,
-]);
 
 export const tokenStorage = {
   getAccessToken(): Nullable<string> {
-    const cookies = parseCookies();
-    return cookies[env.authCookieName] ?? null;
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    return getFromStorage(window.sessionStorage, STORAGE_KEYS.accessToken)
+      ?? getFromStorage(window.localStorage, STORAGE_KEYS.accessToken);
   },
   getRefreshToken(): Nullable<string> {
-    const cookies = parseCookies();
-    return cookies[env.refreshCookieName] ?? null;
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    return getFromStorage(window.sessionStorage, STORAGE_KEYS.refreshToken)
+      ?? getFromStorage(window.localStorage, STORAGE_KEYS.refreshToken);
   },
   setTokens(tokens: TokenPair): void {
-    setCookie(env.authCookieName, tokens.accessToken);
-    setCookie(env.refreshCookieName, tokens.refreshToken);
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(STORAGE_KEYS.accessToken, tokens.accessToken);
+    window.sessionStorage.setItem(STORAGE_KEYS.accessToken, tokens.accessToken);
+
+    window.sessionStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refreshToken);
+    window.localStorage.removeItem(STORAGE_KEYS.refreshToken);
   },
   clearTokens(): void {
-    allStorageKeys.forEach((key) => {
-      clearCookie(key);
-      clearBrowserStorage(key);
-    });
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    removeFromStorage(window.localStorage, STORAGE_KEYS.accessToken);
+    removeFromStorage(window.sessionStorage, STORAGE_KEYS.accessToken);
+    removeFromStorage(window.localStorage, STORAGE_KEYS.refreshToken);
+    removeFromStorage(window.sessionStorage, STORAGE_KEYS.refreshToken);
   },
 };
