@@ -177,7 +177,8 @@
       "promote": "Promote",
       "demote": "Demote",
       "loading": "Loading...",
-      "missingId": "Identifier unavailable"
+      "missingId": "Identifier unavailable",
+      "title": "Actions"
     },
     "permissions": {
       "title": "Permissions",
@@ -209,11 +210,16 @@
     "error": {
       "title": "Unable to load users"
     },
-    "subtitle": "Manage accounts, roles, and permissions",
+    "subtitle": "Manage user accounts and permissions.",
     "toolbar": {
       "filterPlaceholder": "Filter (coming soon)",
       "invite": "Invite user"
-    }
+    },
+    "search": "Search users",
+    "back": "Back to Users",
+    "loading": "Loading...",
+    "preview": "Preview",
+    "infoTitle": "User info"
   },
   "shell": {
     "searchPlaceholder": "Search navigation, users, and reports",

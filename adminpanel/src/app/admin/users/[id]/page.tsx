@@ -6,75 +6,116 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { AlertBanner } from "@/src/components/ui/alert-banner";
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { CardTitle, MutedText, PageTitle, Text } from "@/src/components/ui/typography";
-import { ROLES } from "@/src/constants/roles";
 import { ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { usersService } from "@/src/modules/users/services/users.service";
-import { RoleGuard } from "@/src/permissions/role-guard";
 
-import type { UserDetailsResponse } from "@/src/modules/users/types";
+import type { UnknownRecord } from "@/src/modules/users/types";
 
-const readSummaryEntries = (data: Record<string, unknown>): Array<{ key: string; value: string }> =>
-  Object.entries(data)
-    .slice(0, 8)
-    .map(([key, value]) => ({
-      key,
-      value: typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : JSON.stringify(value),
-    }));
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const toDisplayValue = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value || "-";
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "-";
+  }
+};
+
+const readPermissions = (source: UnknownRecord): string[] => {
+  const candidates = [source.permissions, source.items, source.data];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate.filter((item): item is string => typeof item === "string");
+    }
+  }
+
+  return [];
+};
 
 export default function AdminUserDetailsPage() {
   const { t } = useI18n();
   const params = useParams<{ id: string }>();
   const userId = params.id;
 
-  const [details, setDetails] = useState<UserDetailsResponse | null>(null);
+  const [userInfo, setUserInfo] = useState<UnknownRecord | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
-  const [newPermission, setNewPermission] = useState<string>("");
-
-  const [loading, setLoading] = useState<boolean>(true);
-  const [mutating, setMutating] = useState<boolean>(false);
+  const [permissionInput, setPermissionInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
+  const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPage = useCallback(async () => {
+  const loadUser = useCallback(async () => {
+    setLoading(true);
+
     try {
-      setLoading(true);
-      setError(null);
-
-      const [nextDetails, nextPermissions] = await Promise.all([
-        usersService.getUserById(userId),
-        usersService.getUserPermissions(userId),
-      ]);
-
-      setDetails(nextDetails);
-      setPermissions(nextPermissions.permissions);
+      const response = await usersService.getUserById(userId);
+      setUserInfo(isRecord(response.data) ? response.data : null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setUserInfo(null);
     } finally {
       setLoading(false);
     }
   }, [t, userId]);
 
-  useEffect(() => {
-    void loadPage();
-  }, [loadPage]);
+  const loadPermissions = useCallback(async () => {
+    setPermissionsLoading(true);
 
-  const summary = useMemo(() => readSummaryEntries(details?.data ?? {}), [details]);
+    try {
+      const response = await usersService.getUserPermissions(userId);
+      if (isRecord(response.data)) {
+        setPermissions(readPermissions(response.data));
+      } else {
+        setPermissions([]);
+      }
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setPermissions([]);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  }, [t, userId]);
+
+  useEffect(() => {
+    setError(null);
+    void Promise.all([loadUser(), loadPermissions()]);
+  }, [loadPermissions, loadUser]);
+
+  const userEntries = useMemo(() => Object.entries(userInfo ?? {}), [userInfo]);
 
   const onAddPermission = async () => {
-    if (!newPermission.trim()) {
+    const value = permissionInput.trim();
+    if (!value) {
       return;
     }
 
+    setMutating(true);
+
     try {
-      setMutating(true);
-      setError(null);
-      const response = await usersService.addUserPermission(userId, newPermission.trim());
-      setPermissions(response.permissions);
-      setNewPermission("");
+      await usersService.addUserPermission(userId, [value]);
+      setPermissionInput("");
+      await loadPermissions();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t("errors.general"));
     } finally {
@@ -83,11 +124,11 @@ export default function AdminUserDetailsPage() {
   };
 
   const onRemovePermission = async (permission: string) => {
+    setMutating(true);
+
     try {
-      setMutating(true);
-      setError(null);
-      const response = await usersService.removeUserPermission(userId, permission);
-      setPermissions(response.permissions);
+      await usersService.removeUserPermission(userId, [permission]);
+      await loadPermissions();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t("errors.general"));
     } finally {
@@ -97,82 +138,76 @@ export default function AdminUserDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
-        <Button variant="ghost" asChild className="w-fit px-0">
-          <Link href={ROUTES.admin.users} aria-label={t("users.detail.backToUsers")}>
-            ← {t("users.detail.backToUsers")}
-          </Link>
-        </Button>
+      <section className="space-y-2">
+        <Link href={ROUTES.admin.users} className="inline-flex text-sm text-text-secondary hover:text-text-primary">
+          ← {t("users.back")}
+        </Link>
         <div className="space-y-1">
-          <PageTitle>{t("users.detail.title")}</PageTitle>
-          <MutedText>{t("users.detail.subtitle")}</MutedText>
+          <PageTitle>{t("users.title")}</PageTitle>
+          <MutedText>{t("users.subtitle")}</MutedText>
         </div>
       </section>
 
       {error ? <AlertBanner variant="error" title={t("users.error.title")} description={error} /> : null}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card className="xl:col-span-1">
-          <CardHeader description={t("users.detail.subtitle")}>
-            <CardTitle>{t("users.detail.profileCardTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {loading ? (
-              <Text>{t("users.actions.loading")}</Text>
-            ) : summary.length ? (
-              summary.map((entry) => (
-                <div key={entry.key} className="space-y-1 rounded-md border border-border bg-surface-elevated px-3 py-2">
-                  <MutedText>{entry.key}</MutedText>
-                  <Text>{entry.value}</Text>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("users.infoTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Text>{t("users.loading")}</Text>
+          ) : userEntries.length ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {userEntries.map(([key, value]) => (
+                <div key={key} className="rounded-lg border border-border bg-surface-elevated p-3">
+                  <MutedText>{key}</MutedText>
+                  <Text>{toDisplayValue(value)}</Text>
                 </div>
-              ))
-            ) : (
-              <Text>{t("users.empty.description")}</Text>
-            )}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          ) : (
+            <Text>{t("users.empty.description")}</Text>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card className="xl:col-span-2">
-          <CardHeader description={t("users.permissions.inputLabel")}>
-            <CardTitle>{t("users.detail.permissionsCardTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-              <div className="flex flex-col gap-3 md:flex-row md:items-end">
-                <Input
-                  id="permission-input"
-                  value={newPermission}
-                  ariaLabel={t("users.permissions.inputLabel")}
-                  placeholder={t("users.permissions.inputPlaceholder")}
-                  onChange={(event) => setNewPermission(event.target.value)}
-                />
-                <Button disabled={mutating || !newPermission.trim()} onClick={() => void onAddPermission()}>
-                  {mutating ? t("users.actions.loading") : t("users.permissions.add")}
-                </Button>
-              </div>
-            </RoleGuard>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("users.permissions.title")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-2 md:flex-row">
+            <Input
+              id="add-permission"
+              value={permissionInput}
+              ariaLabel={t("users.permissions.add")}
+              placeholder={t("users.permissions.add")}
+              onChange={(event) => setPermissionInput(event.target.value)}
+            />
+            <Button disabled={mutating || !permissionInput.trim()} onClick={() => void onAddPermission()}>
+              {mutating ? t("users.loading") : t("users.permissions.add")}
+            </Button>
+          </div>
 
-            {loading ? (
-              <Text>{t("users.actions.loading")}</Text>
-            ) : permissions.length ? (
-              <ul className="space-y-2">
-                {permissions.map((permission) => (
-                  <li key={permission} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                    <Text>{permission}</Text>
-                    <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-                      <Button variant="destructive" disabled={mutating} onClick={() => void onRemovePermission(permission)}>
-                        {mutating ? t("users.actions.loading") : t("users.permissions.remove")}
-                      </Button>
-                    </RoleGuard>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Text>{t("users.permissions.empty")}</Text>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          {permissionsLoading ? (
+            <Text>{t("users.loading")}</Text>
+          ) : permissions.length ? (
+            <ul className="flex flex-wrap gap-2">
+              {permissions.map((permission) => (
+                <li key={permission} className="inline-flex items-center gap-2">
+                  <Badge>{permission}</Badge>
+                  <Button className="h-8 px-3" variant="destructive" disabled={mutating} onClick={() => void onRemovePermission(permission)}>
+                    {t("users.permissions.remove")}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Text>{t("users.empty.description")}</Text>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

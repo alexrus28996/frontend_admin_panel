@@ -1,155 +1,180 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { useRouter } from "next/navigation";
 
 import { DataTable } from "@/src/components/data-table/data-table";
 import { EmptyState } from "@/src/components/states/empty-state";
 import { AlertBanner } from "@/src/components/ui/alert-banner";
 import { Button } from "@/src/components/ui/button";
+import { Card, CardContent } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { MutedText, PageTitle } from "@/src/components/ui/typography";
-import { ROLES } from "@/src/constants/roles";
 import { ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { usersService } from "@/src/modules/users/services/users.service";
-import { RoleGuard } from "@/src/permissions/role-guard";
 
 import type { DataTableColumn } from "@/src/components/data-table/data-table";
-import type { UserListItem } from "@/src/modules/users/types";
+import type { UnknownRecord } from "@/src/modules/users/types";
 
-const readStringField = (data: Record<string, unknown>, keys: string[]): string => {
-  for (const key of keys) {
-    const candidate = data[key];
-    if (typeof candidate === "string" && candidate.trim()) {
-      return candidate;
-    }
+const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const toDisplayValue = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value || "-";
   }
 
-  return "-";
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "-";
+  }
+};
+
+const getUserId = (item: UnknownRecord): string | null => {
+  const id = item.id;
+
+  if (typeof id === "string" || typeof id === "number") {
+    return String(id);
+  }
+
+  return null;
 };
 
 export default function AdminUsersPage() {
-  console.log("Users page mounted");
-
   const { t } = useI18n();
   const router = useRouter();
 
-  const [rows, setRows] = useState<UserListItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [rows, setRows] = useState<UnknownRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
-  const [pageSize] = useState<number>(10);
-  const [totalItems, setTotalItems] = useState<number>(0);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [actionLoadingById, setActionLoadingById] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const loadRows = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const refreshUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-        const response = await usersService.getUsers({
-          q: search || undefined,
-          page,
-          limit: pageSize,
-        });
+    try {
+      const response = await usersService.getUsers({
+        q: search || undefined,
+        page,
+        limit: pageSize,
+      });
 
-        setRows(response.items);
-        setTotalItems(response.totalItems);
-        setTotalPages(response.totalPages);
-      } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : t("errors.general"));
-      } finally {
-        setLoading(false);
+      if (Array.isArray(response.data)) {
+        setRows(response.data.filter((item): item is UnknownRecord => isRecord(item)));
+        return;
       }
-    };
 
-    void loadRows();
+      setRows([]);
+    } catch (nextError) {
+      setRows([]);
+      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+    } finally {
+      setLoading(false);
+    }
   }, [page, pageSize, search, t]);
 
+  useEffect(() => {
+    void refreshUsers();
+  }, [refreshUsers]);
+
   const withActionLoading = useCallback(async (id: string, action: () => Promise<void>) => {
+    setActionLoadingById((prev) => ({ ...prev, [id]: true }));
+
     try {
-      setActionLoadingById((prev) => ({ ...prev, [id]: true }));
       await action();
+      await refreshUsers();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t("errors.general"));
     } finally {
       setActionLoadingById((prev) => ({ ...prev, [id]: false }));
     }
-  }, [t]);
+  }, [refreshUsers, t]);
 
-  const onPromote = useCallback(async (id: string) => {
-    await withActionLoading(id, async () => {
-      await usersService.promoteUser(id);
-      const response = await usersService.getUsers({ q: search || undefined, page, limit: pageSize });
-      setRows(response.items);
-      setTotalItems(response.totalItems);
-      setTotalPages(response.totalPages);
+  const dynamicKeys = useMemo(() => {
+    const firstRow = rows[0];
+
+    if (!firstRow) {
+      return [];
+    }
+
+    return Object.keys(firstRow).slice(0, 4);
+  }, [rows]);
+
+  const columns = useMemo<DataTableColumn<UnknownRecord>[]>(() => {
+    const generatedColumns: DataTableColumn<UnknownRecord>[] = dynamicKeys.map((key) => ({
+      id: key,
+      header: key,
+      cell: (item) => toDisplayValue(item[key]),
+    }));
+
+    if (!generatedColumns.length) {
+      generatedColumns.push({
+        id: "json-preview",
+        header: t("users.preview"),
+        cell: (item) => toDisplayValue(item),
+      });
+    }
+
+    generatedColumns.push({
+      id: "actions",
+      header: t("users.actions.title"),
+      cell: (item) => {
+        const itemId = getUserId(item);
+
+        if (!itemId) {
+          return <MutedText>{t("users.empty.description")}</MutedText>;
+        }
+
+        const isMutating = Boolean(actionLoadingById[itemId]);
+
+        return (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              className="h-8 px-3"
+              disabled={isMutating}
+              onClick={() => router.push(ROUTES.admin.userById(itemId))}
+            >
+              {t("users.actions.view")}
+            </Button>
+            <Button
+              variant="primary"
+              className="h-8 px-3"
+              disabled={isMutating}
+              onClick={() => void withActionLoading(itemId, async () => usersService.promoteUser(itemId))}
+            >
+              {isMutating ? t("users.loading") : t("users.actions.promote")}
+            </Button>
+            <Button
+              variant="destructive"
+              className="h-8 px-3"
+              disabled={isMutating}
+              onClick={() => void withActionLoading(itemId, async () => usersService.demoteUser(itemId))}
+            >
+              {isMutating ? t("users.loading") : t("users.actions.demote")}
+            </Button>
+          </div>
+        );
+      },
     });
-  }, [page, pageSize, search, withActionLoading]);
 
-  const onDemote = useCallback(async (id: string) => {
-    await withActionLoading(id, async () => {
-      await usersService.demoteUser(id);
-      const response = await usersService.getUsers({ q: search || undefined, page, limit: pageSize });
-      setRows(response.items);
-      setTotalItems(response.totalItems);
-      setTotalPages(response.totalPages);
-    });
-  }, [page, pageSize, search, withActionLoading]);
-
-  const columns = useMemo<DataTableColumn<UserListItem>[]>(
-    () => [
-      {
-        id: "id",
-        header: t("users.columns.id"),
-        cell: (item) => item.id ?? t("users.columns.unknown"),
-      },
-      {
-        id: "primary",
-        header: t("users.columns.primary"),
-        cell: (item) => readStringField(item.data, ["name", "fullName", "username", "email"]),
-      },
-      {
-        id: "secondary",
-        header: t("users.columns.secondary"),
-        cell: (item) => readStringField(item.data, ["email", "username", "name"]),
-      },
-      {
-        id: "actions",
-        header: t("users.columns.actions"),
-        cell: (item) => {
-          if (!item.id) {
-            return <span className="text-sm text-text-secondary">{t("users.actions.missingId")}</span>;
-          }
-
-          const itemLoading = actionLoadingById[item.id] ?? false;
-
-          return (
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="secondary" className="h-8 w-8 px-0" ariaLabel={t("users.actions.view")} onClick={() => router.push(ROUTES.admin.userById(item.id as string))}>
-                ↗
-              </Button>
-              <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-                <Button variant="primary" className="h-8 w-8 px-0" disabled={itemLoading} ariaLabel={t("users.actions.promote")} onClick={() => void onPromote(item.id as string)}>
-                  ↑
-                </Button>
-              </RoleGuard>
-              <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-                <Button variant="destructive" className="h-8 w-8 px-0" disabled={itemLoading} ariaLabel={t("users.actions.demote")} onClick={() => void onDemote(item.id as string)}>
-                  ↓
-                </Button>
-              </RoleGuard>
-            </div>
-          );
-        },
-      },
-    ],
-    [actionLoadingById, onDemote, onPromote, router, t],
-  );
+    return generatedColumns;
+  }, [actionLoadingById, dynamicKeys, router, t, withActionLoading]);
 
   return (
     <div className="space-y-6">
@@ -160,33 +185,33 @@ export default function AdminUsersPage() {
 
       {error ? <AlertBanner variant="error" title={t("users.error.title")} description={error} /> : null}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 md:flex-row md:items-center md:justify-between">
-        <div className="w-full md:max-w-sm">
-          <Input id="users-toolbar-search" ariaLabel={t("table.searchPlaceholder")} value={search} placeholder={t("table.searchPlaceholder")} onChange={(event) => setSearch(event.target.value)} />
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="secondary" ariaLabel={t("users.toolbar.filterPlaceholder")}>{t("users.toolbar.filterPlaceholder")}</Button>
-          <RoleGuard roles={[ROLES.superAdmin]} fallback={null}>
-            <Button variant="primary" ariaLabel={t("users.toolbar.invite")}>{t("users.toolbar.invite")}</Button>
-          </RoleGuard>
-        </div>
-      </section>
+      <Card>
+        <CardContent className="space-y-4">
+          <Input
+            id="users-search"
+            value={search}
+            ariaLabel={t("users.search")}
+            placeholder={t("users.search")}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
 
-      {(!loading && rows.length === 0) ? <EmptyState title={t("users.empty.title")} description={t("users.empty.description")} /> : null}
+          {!loading && rows.length === 0 ? (
+            <EmptyState title={t("users.title")} description={t("users.empty.description")} />
+          ) : null}
 
-      <DataTable<UserListItem>
-        columns={columns}
-        rows={rows}
-        loading={loading}
-        error={error}
-        searchValue={search}
-        onSearchChange={(value) => {
-          setSearch(value);
-          setPage(1);
-        }}
-        pagination={{ page, pageSize, totalItems, totalPages }}
-        onPaginationChange={(nextPagination) => setPage(nextPagination.page)}
-      />
+          <DataTable<UnknownRecord>
+            columns={columns}
+            rows={rows}
+            loading={loading}
+            error={error}
+            pagination={{ page, pageSize, totalItems: rows.length, totalPages: Math.max(1, Math.ceil(rows.length / pageSize)) }}
+            onPaginationChange={(nextPagination) => setPage(nextPagination.page)}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
