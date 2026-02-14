@@ -11,7 +11,6 @@ import { DropdownMenu } from "@/src/components/ui/dropdown-menu";
 import { Input } from "@/src/components/ui/input";
 import { NAVIGATION_GROUP_LABELS, NAVIGATION_ITEMS } from "@/src/constants/navigation";
 import { ROUTES } from "@/src/constants/routes";
-import { STORAGE_KEYS } from "@/src/constants/storage-keys";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { cn } from "@/src/lib/cn";
 import { hasAnyRole } from "@/src/permissions/permission-service";
@@ -119,17 +118,7 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
 
   const sidebarRef = useRef<HTMLElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.localStorage.getItem(STORAGE_KEYS.ui.sidebarCollapsed) === "true";
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEYS.ui.sidebarCollapsed, String(sidebarCollapsed));
-  }, [sidebarCollapsed]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (!sidebarOpen) {
@@ -250,11 +239,11 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           <nav className="flex-1 overflow-y-auto pr-1" aria-label={t("navigation.main")}>
-            <div className="space-y-4 pb-4">
+            <div className="space-y-5 pb-4">
               {groupedItems.map((group) => (
-                <section key={group.group} className="space-y-2">
-                  {!sidebarCollapsed ? <p className="px-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">{t(group.labelKey)}</p> : null}
-                  <ul className="space-y-1" role="list">
+                <section key={group.group} className="mt-1 space-y-2 first:mt-0">
+                  {!sidebarCollapsed ? <p className="px-2 text-xs font-semibold uppercase tracking-[0.08em] text-text-secondary/80">{t(group.labelKey)}</p> : null}
+                  <ul className="space-y-1.5" role="list">
                     {group.items.map((item) => {
                       const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -263,24 +252,20 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
                           <Link
                             href={item.href}
                             aria-label={t(item.labelKey)}
-                            title={sidebarCollapsed ? t(item.labelKey) : undefined}
                             onClick={() => setSidebarOpen(false)}
                             className={cn(
-                              "group relative flex h-10 items-center gap-3 overflow-visible rounded-lg border px-3 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                              "group relative flex min-h-[44px] items-center gap-3 overflow-visible rounded-lg border px-3 text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                               sidebarCollapsed ? "justify-center" : "justify-start",
                               isActive
-                                ? "border-primary/35 bg-primary/10 font-semibold text-primary"
-                                : "border-transparent text-text-secondary hover:bg-surface-muted hover:text-text-primary",
+                                ? "border-primary/35 bg-surface-muted text-primary"
+                                : "border-transparent text-text-secondary hover:bg-surface-muted/60 hover:text-text-primary",
                             )}
                           >
-                            <span className={cn("absolute inset-y-1 left-0 w-1 rounded-r-md transition-all duration-200", isActive ? "bg-primary" : "bg-transparent")} aria-hidden="true" />
-                            <NavigationIconGlyph icon={item.icon} />
-                            {!sidebarCollapsed ? <span className="truncate">{t(item.labelKey)}</span> : null}
-                            {sidebarCollapsed ? (
-                              <span className="pointer-events-none absolute left-[calc(100%+8px)] top-1/2 hidden -translate-y-1/2 rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-text-primary shadow-sm group-hover:block group-focus-visible:block md:block md:opacity-0 md:transition-opacity md:duration-200 md:group-hover:opacity-100 md:group-focus-visible:opacity-100">
-                                {t(item.labelKey)}
-                              </span>
-                            ) : null}
+                            <span className={cn("absolute inset-y-1 left-0 w-[3px] rounded-r-md transition-all duration-150", isActive ? "bg-primary" : "bg-transparent")} aria-hidden="true" />
+                            <span className={cn("transition-colors duration-150", isActive ? "text-text-primary" : "text-text-secondary group-hover:text-text-primary")}>
+                              <NavigationIconGlyph icon={item.icon} />
+                            </span>
+                            {!sidebarCollapsed ? <span className={cn("truncate", isActive ? "font-semibold text-text-primary" : "font-medium")}>{t(item.labelKey)}</span> : null}
                           </Link>
                         </li>
                       );
