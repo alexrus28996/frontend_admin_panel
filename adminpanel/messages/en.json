@@ -19,9 +19,9 @@
     "reports": "Reports",
     "settings": "Settings",
     "groups": {
-      "overview": "Overview",
-      "management": "Management",
-      "commerce": "Commerce",
+      "main": "Main",
+      "catalog": "Catalog",
+      "sales": "Sales",
       "system": "System"
     },
     "topbarMenuLabel": "Topbar menu"
