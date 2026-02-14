@@ -1,0 +1,36 @@
+{
+  "app": {
+    "name": "Enterprise Admin Panel",
+    "description": "Production-grade architecture initialized"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "roles": "Roles",
+    "products": "Products",
+    "categories": "Categories",
+    "orders": "Orders",
+    "inventory": "Inventory",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "common": {
+    "loading": "Loading",
+    "retry": "Retry",
+    "noData": "No data available",
+    "emptyDescription": "There are no records to display yet",
+    "unauthorized": "You are not authorized to view this section"
+  },
+  "home": {
+    "title": "Architecture foundation is ready",
+    "subtitle": "Core infrastructure is configured for enterprise modules"
+  },
+  "table": {
+    "searchPlaceholder": "Search",
+    "page": "Page",
+    "of": "of",
+    "rowsPerPage": "Rows per page",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}
