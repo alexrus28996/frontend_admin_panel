@@ -3,7 +3,9 @@ import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
 import { salesReportQuerySchema } from "@/src/modules/dashboard/schemas/date-range.schema";
 
 import type {
+  DashboardMetricRecord,
   DashboardMetricsResponse,
+  DashboardReportRow,
   SalesReportResponse,
   TopCustomersResponse,
   TopProductsResponse,
@@ -24,24 +26,29 @@ const withQueryParams = (basePath: string, params: Record<string, string | undef
 };
 
 export const dashboardService = {
-  getMetrics(): Promise<DashboardMetricsResponse> {
-    return apiClient.get<DashboardMetricsResponse>(API_ENDPOINTS.admin.metrics);
+  async getMetrics(): Promise<DashboardMetricRecord> {
+    const response = await apiClient.get<DashboardMetricsResponse>(API_ENDPOINTS.admin.metrics);
+    return response.data;
   },
-  getSalesReport(params: SalesReportQueryInput): Promise<SalesReportResponse> {
+  async getSalesReport(params: SalesReportQueryInput): Promise<DashboardReportRow[]> {
     const parsedParams = salesReportQuerySchema.parse(params);
 
-    return apiClient.get<SalesReportResponse>(
+    const response = await apiClient.get<SalesReportResponse>(
       withQueryParams(API_ENDPOINTS.admin.reports.sales, {
         from: parsedParams.from,
         to: parsedParams.to,
         groupBy: parsedParams.groupBy,
       }),
     );
+
+    return response.data;
   },
-  getTopProducts(): Promise<TopProductsResponse> {
-    return apiClient.get<TopProductsResponse>(API_ENDPOINTS.admin.reports.topProducts);
+  async getTopProducts(): Promise<DashboardReportRow[]> {
+    const response = await apiClient.get<TopProductsResponse>(API_ENDPOINTS.admin.reports.topProducts);
+    return response.data;
   },
-  getTopCustomers(): Promise<TopCustomersResponse> {
-    return apiClient.get<TopCustomersResponse>(API_ENDPOINTS.admin.reports.topCustomers);
+  async getTopCustomers(): Promise<DashboardReportRow[]> {
+    const response = await apiClient.get<TopCustomersResponse>(API_ENDPOINTS.admin.reports.topCustomers);
+    return response.data;
   },
 };

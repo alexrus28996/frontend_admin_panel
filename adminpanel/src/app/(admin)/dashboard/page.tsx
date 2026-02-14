@@ -5,29 +5,18 @@ import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "@/src/components/data-table/data-table";
 import { Skeleton } from "@/src/components/states/skeleton";
 import { AlertBanner } from "@/src/components/ui/alert-banner";
-import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { PageTitle, SectionTitle, Text } from "@/src/components/ui/typography";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { dashboardService } from "@/src/modules/dashboard/services/dashboard.service";
 
-import type {
-  DashboardPrimitive,
-  SalesReportEntry,
-  SalesReportResponse,
-  TopCustomerEntry,
-  TopCustomersResponse,
-  TopProductEntry,
-  TopProductsResponse,
-} from "@/src/modules/dashboard/types";
+import type { DataTableColumn } from "@/src/components/data-table/data-table";
+import type { DashboardMetricRecord, DashboardPrimitive, DashboardReportRow } from "@/src/modules/dashboard/types";
 
 const defaultPagination = { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 };
 
 type GroupBy = "day" | "week" | "month";
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const formatCellValue = (value: unknown): string => {
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
@@ -41,24 +30,17 @@ const formatCellValue = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-const extractArray = <TItem,>(response: Record<string, unknown>): TItem[] => {
-  const items = response.items;
-  if (Array.isArray(items)) return items as TItem[];
+const createColumns = (rows: DashboardReportRow[]): DataTableColumn<DashboardReportRow>[] => {
+  const firstRow = rows[0];
+  if (!firstRow) {
+    return [];
+  }
 
-  const data = response.data;
-  if (Array.isArray(data)) return data as TItem[];
-
-  return [];
-};
-
-const statusVariant = (value: string): "default" | "success" | "warning" | "destructive" => {
-  const normalized = value.toLowerCase();
-
-  if (["success", "completed", "paid", "active"].includes(normalized)) return "success";
-  if (["pending", "processing", "draft"].includes(normalized)) return "warning";
-  if (["failed", "cancelled", "inactive"].includes(normalized)) return "destructive";
-
-  return "default";
+  return Object.keys(firstRow).map((key) => ({
+    id: key,
+    header: key,
+    cell: (item) => formatCellValue(item[key]),
+  }));
 };
 
 export default function DashboardPage() {
@@ -68,19 +50,19 @@ export default function DashboardPage() {
   const [toDate, setToDate] = useState<string>("");
   const [groupBy, setGroupBy] = useState<GroupBy>("day");
 
-  const [metrics, setMetrics] = useState<Record<string, DashboardPrimitive | unknown> | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetricRecord | null>(null);
   const [metricsLoading, setMetricsLoading] = useState<boolean>(true);
   const [metricsError, setMetricsError] = useState<string | null>(null);
 
-  const [salesRows, setSalesRows] = useState<SalesReportEntry[]>([]);
+  const [salesRows, setSalesRows] = useState<DashboardReportRow[]>([]);
   const [salesLoading, setSalesLoading] = useState<boolean>(true);
   const [salesError, setSalesError] = useState<string | null>(null);
 
-  const [topProductsRows, setTopProductsRows] = useState<TopProductEntry[]>([]);
+  const [topProductsRows, setTopProductsRows] = useState<DashboardReportRow[]>([]);
   const [topProductsLoading, setTopProductsLoading] = useState<boolean>(true);
   const [topProductsError, setTopProductsError] = useState<string | null>(null);
 
-  const [topCustomersRows, setTopCustomersRows] = useState<TopCustomerEntry[]>([]);
+  const [topCustomersRows, setTopCustomersRows] = useState<DashboardReportRow[]>([]);
   const [topCustomersLoading, setTopCustomersLoading] = useState<boolean>(true);
   const [topCustomersError, setTopCustomersError] = useState<string | null>(null);
 
@@ -107,17 +89,13 @@ export default function DashboardPage() {
       try {
         setSalesLoading(true);
         setSalesError(null);
-        const response: SalesReportResponse = await dashboardService.getSalesReport({
+        const response = await dashboardService.getSalesReport({
           from: fromDate || undefined,
           to: toDate || undefined,
           groupBy,
         });
 
-        if (isRecord(response)) {
-          setSalesRows(extractArray<SalesReportEntry>(response));
-        } else {
-          setSalesRows([]);
-        }
+        setSalesRows(response);
       } catch (error) {
         const message = error instanceof Error ? error.message : t("errors.general");
         setSalesError(message);
@@ -134,13 +112,8 @@ export default function DashboardPage() {
       try {
         setTopProductsLoading(true);
         setTopProductsError(null);
-        const response: TopProductsResponse = await dashboardService.getTopProducts();
-
-        if (isRecord(response)) {
-          setTopProductsRows(extractArray<TopProductEntry>(response));
-        } else {
-          setTopProductsRows([]);
-        }
+        const response = await dashboardService.getTopProducts();
+        setTopProductsRows(response);
       } catch (error) {
         const message = error instanceof Error ? error.message : t("errors.general");
         setTopProductsError(message);
@@ -157,13 +130,8 @@ export default function DashboardPage() {
       try {
         setTopCustomersLoading(true);
         setTopCustomersError(null);
-        const response: TopCustomersResponse = await dashboardService.getTopCustomers();
-
-        if (isRecord(response)) {
-          setTopCustomersRows(extractArray<TopCustomerEntry>(response));
-        } else {
-          setTopCustomersRows([]);
-        }
+        const response = await dashboardService.getTopCustomers();
+        setTopCustomersRows(response);
       } catch (error) {
         const message = error instanceof Error ? error.message : t("errors.general");
         setTopCustomersError(message);
@@ -176,12 +144,15 @@ export default function DashboardPage() {
   }, [t]);
 
   const metricEntries = useMemo(() => Object.entries(metrics ?? {}), [metrics]);
+  const salesColumns = useMemo(() => createColumns(salesRows), [salesRows]);
+  const topProductsColumns = useMemo(() => createColumns(topProductsRows), [topProductsRows]);
+  const topCustomersColumns = useMemo(() => createColumns(topCustomersRows), [topCustomersRows]);
 
   return (
     <div className="space-y-6">
       <PageTitle>{t("dashboard.title")}</PageTitle>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label={t("dashboard.kpis.section") }>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label={t("dashboard.kpis.section")}>
         {metricsLoading
           ? Array.from({ length: 4 }).map((_, index) => (
               <Card key={`kpi-skeleton-${index}`}>
@@ -202,7 +173,7 @@ export default function DashboardPage() {
                   <Card key={`metric-${key}`}>
                     <CardContent>
                       <Text className="text-text-secondary">{key}</Text>
-                      <Text className="text-2xl font-semibold">{formatCellValue(value)}</Text>
+                      <Text className="text-2xl font-semibold">{formatCellValue(value as DashboardPrimitive)}</Text>
                     </CardContent>
                   </Card>
                 ))
@@ -261,26 +232,8 @@ export default function DashboardPage() {
           <SectionTitle>{t("dashboard.sales.title")}</SectionTitle>
         </CardHeader>
         <CardContent>
-          <DataTable<SalesReportEntry>
-            columns={[
-              { id: "period", header: t("dashboard.sales.columns.period"), cell: (item) => formatCellValue(item.period) },
-              {
-                id: "totalSales",
-                header: t("dashboard.sales.columns.totalSales"),
-                cell: (item) => formatCellValue(item.totalSales),
-              },
-              {
-                id: "orderCount",
-                header: t("dashboard.sales.columns.orderCount"),
-                cell: (item) => formatCellValue(item.orderCount),
-              },
-              {
-                id: "status",
-                header: t("dashboard.sales.columns.status"),
-                cell: (item) =>
-                  item.status ? <Badge variant={statusVariant(item.status)}>{item.status}</Badge> : formatCellValue(item.status),
-              },
-            ]}
+          <DataTable<DashboardReportRow>
+            columns={salesColumns}
             rows={salesRows}
             loading={salesLoading}
             error={salesError}
@@ -297,18 +250,8 @@ export default function DashboardPage() {
           <SectionTitle>{t("dashboard.topProducts.title")}</SectionTitle>
         </CardHeader>
         <CardContent>
-          <DataTable<TopProductEntry>
-            columns={[
-              { id: "productName", header: t("dashboard.topProducts.columns.productName"), cell: (item) => formatCellValue(item.productName) },
-              { id: "quantitySold", header: t("dashboard.topProducts.columns.quantitySold"), cell: (item) => formatCellValue(item.quantitySold) },
-              { id: "revenue", header: t("dashboard.topProducts.columns.revenue"), cell: (item) => formatCellValue(item.revenue) },
-              {
-                id: "status",
-                header: t("dashboard.topProducts.columns.status"),
-                cell: (item) =>
-                  item.status ? <Badge variant={statusVariant(item.status)}>{item.status}</Badge> : formatCellValue(item.status),
-              },
-            ]}
+          <DataTable<DashboardReportRow>
+            columns={topProductsColumns}
             rows={topProductsRows}
             loading={topProductsLoading}
             error={topProductsError}
@@ -325,18 +268,8 @@ export default function DashboardPage() {
           <SectionTitle>{t("dashboard.topCustomers.title")}</SectionTitle>
         </CardHeader>
         <CardContent>
-          <DataTable<TopCustomerEntry>
-            columns={[
-              { id: "customerName", header: t("dashboard.topCustomers.columns.customerName"), cell: (item) => formatCellValue(item.customerName) },
-              { id: "orders", header: t("dashboard.topCustomers.columns.orders"), cell: (item) => formatCellValue(item.orders) },
-              { id: "spent", header: t("dashboard.topCustomers.columns.spent"), cell: (item) => formatCellValue(item.spent) },
-              {
-                id: "status",
-                header: t("dashboard.topCustomers.columns.status"),
-                cell: (item) =>
-                  item.status ? <Badge variant={statusVariant(item.status)}>{item.status}</Badge> : formatCellValue(item.status),
-              },
-            ]}
+          <DataTable<DashboardReportRow>
+            columns={topCustomersColumns}
             rows={topCustomersRows}
             loading={topCustomersLoading}
             error={topCustomersError}

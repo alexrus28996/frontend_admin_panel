@@ -1,57 +1,22 @@
 export type DashboardPrimitive = string | number | boolean | null;
 
-export interface DashboardMetricsResponse {
-  // TODO: API documentation does not define concrete metric fields.
-  [metricName: string]: DashboardPrimitive | unknown;
+export interface DashboardApiEnvelope<TData> {
+  success: boolean;
+  data: TData;
 }
 
-export interface SalesReportEntry {
-  // TODO: Exact sales report payload shape is undocumented.
-  period?: string;
-  totalSales?: number;
-  orderCount?: number;
-  status?: string;
-  [key: string]: unknown;
-}
+export type DashboardMetricRecord = Record<string, DashboardPrimitive>;
 
-export interface SalesReportResponse {
-  // TODO: API documentation does not confirm response root key.
-  items?: SalesReportEntry[];
-  data?: SalesReportEntry[];
-  summary?: Record<string, unknown>;
-  [key: string]: unknown;
-}
+// TODO(/api/admin/metrics): IMPLEMENTED_API_DOCUMENTATION.md does not provide metric field names.
+export type DashboardMetricsResponse = DashboardApiEnvelope<DashboardMetricRecord>;
 
-export interface TopProductEntry {
-  // TODO: Exact product report payload shape is undocumented.
-  productId?: string | number;
-  productName?: string;
-  quantitySold?: number;
-  revenue?: number;
-  status?: string;
-  [key: string]: unknown;
-}
+export type DashboardReportRow = Record<string, DashboardPrimitive>;
 
-export interface TopProductsResponse {
-  // TODO: API documentation does not confirm response root key.
-  items?: TopProductEntry[];
-  data?: TopProductEntry[];
-  [key: string]: unknown;
-}
+// TODO(/api/admin/reports/sales): IMPLEMENTED_API_DOCUMENTATION.md does not provide row field names.
+export type SalesReportResponse = DashboardApiEnvelope<DashboardReportRow[]>;
 
-export interface TopCustomerEntry {
-  // TODO: Exact customer report payload shape is undocumented.
-  customerId?: string | number;
-  customerName?: string;
-  orders?: number;
-  spent?: number;
-  status?: string;
-  [key: string]: unknown;
-}
+// TODO(/api/admin/reports/top-products): IMPLEMENTED_API_DOCUMENTATION.md does not provide row field names.
+export type TopProductsResponse = DashboardApiEnvelope<DashboardReportRow[]>;
 
-export interface TopCustomersResponse {
-  // TODO: API documentation does not confirm response root key.
-  items?: TopCustomerEntry[];
-  data?: TopCustomerEntry[];
-  [key: string]: unknown;
-}
+// TODO(/api/admin/reports/top-customers): IMPLEMENTED_API_DOCUMENTATION.md does not provide row field names.
+export type TopCustomersResponse = DashboardApiEnvelope<DashboardReportRow[]>;
