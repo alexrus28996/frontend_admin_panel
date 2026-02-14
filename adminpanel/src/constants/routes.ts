@@ -1,4 +1,4 @@
-export const APP_ROUTES = {
+export const ROUTES = {
   root: "/",
   auth: {
     login: "/login",
@@ -26,14 +26,16 @@ export const APP_ROUTES = {
   },
 } as const;
 
+export const APP_ROUTES = ROUTES;
+
 export const PUBLIC_ROUTES = [
-  APP_ROUTES.root,
-  APP_ROUTES.auth.login,
-  APP_ROUTES.auth.sessionExpired,
-  APP_ROUTES.auth.forgotPassword,
-  APP_ROUTES.auth.resetPassword,
-  APP_ROUTES.auth.verifyEmail,
-  APP_ROUTES.auth.logout,
+  ROUTES.root,
+  ROUTES.auth.login,
+  ROUTES.auth.sessionExpired,
+  ROUTES.auth.forgotPassword,
+  ROUTES.auth.resetPassword,
+  ROUTES.auth.verifyEmail,
+  ROUTES.auth.logout,
 ] as const;
 
-export const DEFAULT_AUTHENTICATED_ROUTE = APP_ROUTES.admin.dashboard;
+export const DEFAULT_AUTHENTICATED_ROUTE = ROUTES.admin.dashboard;

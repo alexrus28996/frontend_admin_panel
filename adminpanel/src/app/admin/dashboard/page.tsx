@@ -30,11 +30,12 @@ const formatCellValue = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-const createColumns = (rows: DashboardReportRow[]): DataTableColumn<DashboardReportRow>[] => {
-  const firstRow = rows[0];
-  if (!firstRow) {
+const createColumns = (rows: DashboardReportRow[] | null | undefined): DataTableColumn<DashboardReportRow>[] => {
+  if (!Array.isArray(rows) || rows.length === 0) {
     return [];
   }
+
+  const firstRow = rows[0];
 
   return Object.keys(firstRow).map((key) => ({
     id: key,
