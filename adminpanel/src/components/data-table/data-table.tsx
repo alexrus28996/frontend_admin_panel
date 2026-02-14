@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/src/components/states/empty-state";
 import { TableSkeleton } from "@/src/components/states/skeleton";
-import { Alert } from "@/src/components/ui/alert";
+import { AlertBanner } from "@/src/components/ui/alert-banner";
 import { Button } from "@/src/components/ui/button";
+import { DropdownMenu } from "@/src/components/ui/dropdown-menu";
+import { Input } from "@/src/components/ui/input";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 
 import type { ServerPaginationParams } from "@/src/api/types/common";
@@ -29,6 +31,7 @@ interface DataTableProps<TItem> {
   toolbarSlot?: React.ReactNode;
   pagination: ServerPaginationParams & { totalItems: number; totalPages: number };
   onPaginationChange: (pagination: ServerPaginationParams) => void;
+  rowActions?: (item: TItem) => { label: string; onSelect: () => void }[];
 }
 
 export const DataTable = <TItem,>({
@@ -43,6 +46,7 @@ export const DataTable = <TItem,>({
   toolbarSlot,
   pagination,
   onPaginationChange,
+  rowActions,
 }: DataTableProps<TItem>) => {
   const { t } = useI18n();
   const [searchInput, setSearchInput] = useState(searchValue);
@@ -52,14 +56,8 @@ export const DataTable = <TItem,>({
   }, [searchValue]);
 
   useEffect(() => {
-    if (!onSearchChange) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      onSearchChange(searchInput);
-    }, searchDebounceMs);
-
+    if (!onSearchChange) return;
+    const timeout = window.setTimeout(() => onSearchChange(searchInput), searchDebounceMs);
     return () => window.clearTimeout(timeout);
   }, [onSearchChange, searchDebounceMs, searchInput]);
 
@@ -70,51 +68,54 @@ export const DataTable = <TItem,>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-md border border-zinc-200 bg-white p-3 md:flex-row md:items-center md:justify-between">
-        <label className="sr-only" htmlFor="table-search-input">
-          {t("table.searchPlaceholder")}
-        </label>
-        <input
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 md:flex-row md:items-center md:justify-between">
+        <Input
           id="table-search-input"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          aria-label={t("table.searchPlaceholder")}
+          ariaLabel={t("table.searchPlaceholder")}
           placeholder={t("table.searchPlaceholder")}
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-400 md:max-w-sm"
+          className="md:max-w-sm"
         />
-        {toolbarSlot ? <div className="flex items-center gap-2">{toolbarSlot}</div> : null}
+        {toolbarSlot ? <div className="flex items-center gap-2" aria-label="Toolbar region">{toolbarSlot}</div> : null}
       </div>
 
       {filterSlot ? (
-        <section aria-label={t("table.filters")} className="rounded-md border border-zinc-200 bg-white p-3">
+        <section aria-label={t("table.filters")} className="rounded-xl border border-border bg-surface p-3">
           {filterSlot}
         </section>
       ) : null}
 
-      {error ? <Alert variant="error" title={t("errors.general")} description={error} /> : null}
+      {error ? <AlertBanner variant="error" title={t("errors.general")} description={error} /> : null}
 
       {loading ? (
         <TableSkeleton />
       ) : rows.length ? (
-        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
           <table className="min-w-full text-left text-sm" aria-label={t("table.dataGrid")}>
-            <thead className="bg-zinc-50">
+            <thead className="sticky top-0 bg-surface-muted">
               <tr>
                 {columns.map((column) => (
-                  <th key={column.id} className="px-4 py-3 font-semibold text-zinc-700">
+                  <th key={column.id} className="px-4 py-3 font-semibold text-text-secondary">
                     {column.header}
                   </th>
                 ))}
+                {rowActions ? <th className="px-4 py-3 text-right font-semibold text-text-secondary">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, index) => (
-                <tr key={`row-${index}`} className="border-t border-zinc-200">
+                <tr key={`row-${index}`} className="border-t border-border transition-colors duration-200 hover:bg-surface-muted/50">
                   {columns.map((column) => (
-                    <td key={column.id} className="px-4 py-3 text-zinc-700">
+                    <td key={column.id} className="px-4 py-3 text-text-primary">
                       {column.cell(row)}
                     </td>
                   ))}
+                  {rowActions ? (
+                    <td className="px-4 py-3 text-right">
+                      <DropdownMenu triggerLabel="⋯" items={rowActions(row)} />
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -124,21 +125,21 @@ export const DataTable = <TItem,>({
         <EmptyState />
       )}
 
-      <div className="flex flex-col gap-3 rounded-md border border-zinc-200 bg-white p-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm text-zinc-600">{paginationLabel}</p>
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 md:flex-row md:items-center md:justify-between">
+        <p className="text-sm text-text-secondary">{paginationLabel}</p>
         <div className="flex items-center gap-2">
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-text-secondary">
             {t("table.rowsPerPage")}: {pagination.pageSize}
           </p>
           <Button
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+            variant="secondary"
             disabled={pagination.page <= 1}
             onClick={() => onPaginationChange({ page: pagination.page - 1, pageSize: pagination.pageSize })}
           >
             {t("table.previous")}
           </Button>
           <Button
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+            variant="secondary"
             disabled={pagination.page >= pagination.totalPages}
             onClick={() => onPaginationChange({ page: pagination.page + 1, pageSize: pagination.pageSize })}
           >
