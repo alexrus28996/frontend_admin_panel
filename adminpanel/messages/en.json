@@ -24,7 +24,8 @@
       "sales": "Sales",
       "system": "System"
     },
-    "topbarMenuLabel": "Topbar menu"
+    "topbarMenuLabel": "Topbar menu",
+    "admin": "Admin"
   },
   "common": {
     "loading": "Loading",
@@ -198,7 +199,8 @@
       "title": "User details",
       "subtitle": "Review profile details and account metadata",
       "profileCardTitle": "Profile",
-      "permissionsCardTitle": "Permissions"
+      "permissionsCardTitle": "Permissions",
+      "backToUsers": "Back to Users"
     },
     "empty": {
       "title": "No users found",

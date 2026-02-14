@@ -22,6 +22,37 @@ const NAVIGATION_GROUP_ORDER: NavigationGroup[] = ["main", "catalog", "sales", "
 
 const iconClassName = "h-5 w-5 shrink-0";
 
+interface BreadcrumbItem {
+  key: MessageKey;
+  href?: string;
+}
+
+const isRouteMatch = (pathname: string, route: string): boolean => pathname === route || pathname.startsWith(`${route}/`);
+
+const isUsersDetailRoute = (pathname: string): boolean => new RegExp(`^${ROUTES.admin.users}/[^/]+$`).test(pathname);
+
+const getBreadcrumbItems = (pathname: string, navLabelKey?: MessageKey): BreadcrumbItem[] => {
+  const adminRoot: BreadcrumbItem = { key: "navigation.admin", href: ROUTES.admin.dashboard };
+
+  if (pathname === ROUTES.admin.users) {
+    return [adminRoot, { key: "navigation.users" }];
+  }
+
+  if (pathname.startsWith(`${ROUTES.admin.users}/`)) {
+    return [adminRoot, { key: "navigation.users", href: ROUTES.admin.users }, { key: "users.detail.title" }];
+  }
+
+  if (pathname === ROUTES.admin.dashboard) {
+    return [adminRoot, { key: "navigation.dashboard" }];
+  }
+
+  if (navLabelKey) {
+    return [adminRoot, { key: navLabelKey }];
+  }
+
+  return [{ key: "navigation.admin" }];
+};
+
 const NavigationIconGlyph = ({ icon }: { icon: NavigationIcon }) => {
   if (icon === "dashboard") {
     return (
@@ -98,18 +129,6 @@ const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
   Array.from(container.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(
     (element) => !element.hasAttribute("disabled") && !element.getAttribute("aria-hidden"),
   );
-
-const getBreadcrumbKeys = (pathname: string, navLabelKey?: MessageKey): MessageKey[] => {
-  if (!pathname.startsWith(ROUTES.admin.users)) {
-    return navLabelKey ? [navLabelKey] : ["app.description"];
-  }
-
-  if (pathname === ROUTES.admin.users) {
-    return ["navigation.users"];
-  }
-
-  return ["navigation.users", "users.detail.title"];
-};
 
 export const AdminShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -199,8 +218,9 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
     [visibleItems],
   );
 
-  const activeNavigationItem = visibleItems.find((item) => pathname.startsWith(item.href));
-  const breadcrumbKeys = getBreadcrumbKeys(pathname, activeNavigationItem?.labelKey);
+  const activeNavigationItem = visibleItems.find((item) => isRouteMatch(pathname, item.href));
+  const isKnownRoute = visibleItems.some((item) => isRouteMatch(pathname, item.href)) || isUsersDetailRoute(pathname);
+  const breadcrumbItems = getBreadcrumbItems(pathname, isKnownRoute ? activeNavigationItem?.labelKey : undefined);
 
   const toggleSidebarCollapsed = () => {
     setSidebarCollapsed((previous) => !previous);
@@ -245,7 +265,7 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
                   {!sidebarCollapsed ? <p className="px-2 text-xs font-semibold uppercase tracking-[0.08em] text-text-secondary/80">{t(group.labelKey)}</p> : null}
                   <ul className="space-y-1.5" role="list">
                     {group.items.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      const isActive = isRouteMatch(pathname, item.href);
 
                       return (
                         <li key={item.href}>
@@ -296,13 +316,22 @@ export const AdminShell = ({ children }: { children: React.ReactNode }) => {
 
             <nav className="min-w-0 flex-1" aria-label={t("common.breadcrumb")}>
               <ol className="flex min-w-0 items-center gap-2 text-sm text-text-secondary">
-                <li className="truncate font-medium text-text-primary">{t("app.name")}</li>
-                {breadcrumbKeys.map((key) => (
-                  <li key={key} className="flex min-w-0 items-center gap-2">
-                    <span aria-hidden="true">{t("shell.breadcrumbSeparator")}</span>
-                    <span className="truncate">{t(key)}</span>
-                  </li>
-                ))}
+                {breadcrumbItems.map((item, index) => {
+                  const isLast = index === breadcrumbItems.length - 1;
+
+                  return (
+                    <li key={`${item.key}-${item.href ?? "leaf"}`} className="flex min-w-0 items-center gap-2">
+                      {index > 0 ? <span aria-hidden="true">{t("shell.breadcrumbSeparator")}</span> : null}
+                      {item.href && !isLast ? (
+                        <Link href={item.href} className="truncate hover:text-text-primary">
+                          {t(item.key)}
+                        </Link>
+                      ) : (
+                        <span className={cn("truncate", isLast ? "font-medium text-text-primary" : undefined)}>{t(item.key)}</span>
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             </nav>
 

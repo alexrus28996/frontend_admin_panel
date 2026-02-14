@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { AlertBanner } from "@/src/components/ui/alert-banner";
@@ -9,6 +11,7 @@ import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { CardTitle, MutedText, PageTitle, Text } from "@/src/components/ui/typography";
 import { ROLES } from "@/src/constants/roles";
+import { ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { usersService } from "@/src/modules/users/services/users.service";
 import { RoleGuard } from "@/src/permissions/role-guard";
@@ -94,9 +97,16 @@ export default function AdminUserDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-1">
-        <PageTitle>{t("users.detail.title")}</PageTitle>
-        <MutedText>{t("users.detail.subtitle")}</MutedText>
+      <section className="space-y-3">
+        <Button variant="ghost" asChild className="w-fit px-0">
+          <Link href={ROUTES.admin.users} aria-label={t("users.detail.backToUsers")}>
+            ← {t("users.detail.backToUsers")}
+          </Link>
+        </Button>
+        <div className="space-y-1">
+          <PageTitle>{t("users.detail.title")}</PageTitle>
+          <MutedText>{t("users.detail.subtitle")}</MutedText>
+        </div>
       </section>
 
       {error ? <AlertBanner variant="error" title={t("users.error.title")} description={error} /> : null}
