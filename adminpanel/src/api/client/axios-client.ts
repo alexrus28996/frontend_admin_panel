@@ -21,6 +21,8 @@ interface RequestOptions extends RequestInit {
   timeoutMs?: number;
 }
 
+type ApiRequestConfig = Pick<RequestOptions, "signal" | "headers" | "timeoutMs">;
+
 const nonRefreshableEndpoints = new Set<string>([
   API_ENDPOINTS.auth.login,
   API_ENDPOINTS.auth.logout,
@@ -102,16 +104,41 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
 };
 
 export const apiClient = {
-  get: <TResponse>(path: string, signal?: AbortSignal): Promise<TResponse> =>
-    request<TResponse>(path, { method: "GET", signal }),
+  get: <TResponse>(path: string, config?: ApiRequestConfig): Promise<TResponse> =>
+    request<TResponse>(path, { method: "GET", ...config }),
   post: <TResponse, TPayload = unknown>(
     path: string,
     payload?: TPayload,
-    signal?: AbortSignal,
+    config?: ApiRequestConfig,
   ): Promise<TResponse> =>
     request<TResponse>(path, {
       method: "POST",
       body: payload ? JSON.stringify(payload) : undefined,
-      signal,
+      ...config,
+    }),
+  put: <TResponse, TPayload = unknown>(
+    path: string,
+    payload?: TPayload,
+    config?: ApiRequestConfig,
+  ): Promise<TResponse> =>
+    request<TResponse>(path, {
+      method: "PUT",
+      body: payload ? JSON.stringify(payload) : undefined,
+      ...config,
+    }),
+  patch: <TResponse, TPayload = unknown>(
+    path: string,
+    payload?: TPayload,
+    config?: ApiRequestConfig,
+  ): Promise<TResponse> =>
+    request<TResponse>(path, {
+      method: "PATCH",
+      body: payload ? JSON.stringify(payload) : undefined,
+      ...config,
+    }),
+  delete: <TResponse>(path: string, config?: ApiRequestConfig): Promise<TResponse> =>
+    request<TResponse>(path, {
+      method: "DELETE",
+      ...config,
     }),
 };

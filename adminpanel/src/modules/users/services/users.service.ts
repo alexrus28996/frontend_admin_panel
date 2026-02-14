@@ -1,5 +1,7 @@
 import { apiClient } from "@/src/api/client/axios-client";
+import { env } from "@/src/config/env";
 import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
+import { normalizeList } from "@/src/modules/users/utils/response-normalizer";
 
 import type {
   UserDetailResponse,
@@ -29,8 +31,15 @@ const withQueryParams = (params: UsersQueryParams = {}): string => {
 };
 
 export const usersService = {
-  getUsers(params?: UsersQueryParams): Promise<UsersListResponse> {
-    return apiClient.get<UsersListResponse>(withQueryParams(params));
+  async getUsers(params?: UsersQueryParams): Promise<UsersListResponse> {
+    const response = await apiClient.get<UsersListResponse>(withQueryParams(params));
+
+    if (env.enableUsersDebugLogs) {
+      console.log("[Users] list raw response:", response);
+      console.log("[Users] list normalized count:", normalizeList(response).length);
+    }
+
+    return response;
   },
 
   getUserById(id: string): Promise<UserDetailResponse> {
@@ -49,9 +58,17 @@ export const usersService = {
     return apiClient.get<UserPermissionsResponse>(API_ENDPOINTS.admin.userPermissions(id));
   },
 
-  addUserPermission(id: string, permissions: string[]): Promise<UserPermissionsResponse> {
+  replacePermissions(id: string, permissions: string[]): Promise<UserPermissionsResponse> {
     const payload: UserPermissionMutationPayload = { permissions };
     return apiClient.post<UserPermissionsResponse, UserPermissionMutationPayload>(
+      API_ENDPOINTS.admin.userPermissions(id),
+      payload,
+    );
+  },
+
+  addUserPermission(id: string, permissions: string[]): Promise<UserPermissionsResponse> {
+    const payload: UserPermissionMutationPayload = { permissions };
+    return apiClient.patch<UserPermissionsResponse, UserPermissionMutationPayload>(
       API_ENDPOINTS.admin.userPermissionsAdd(id),
       payload,
     );
@@ -59,7 +76,7 @@ export const usersService = {
 
   removeUserPermission(id: string, permissions: string[]): Promise<UserPermissionsResponse> {
     const payload: UserPermissionMutationPayload = { permissions };
-    return apiClient.post<UserPermissionsResponse, UserPermissionMutationPayload>(
+    return apiClient.patch<UserPermissionsResponse, UserPermissionMutationPayload>(
       API_ENDPOINTS.admin.userPermissionsRemove(id),
       payload,
     );

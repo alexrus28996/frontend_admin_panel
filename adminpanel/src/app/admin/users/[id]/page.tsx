@@ -14,11 +14,9 @@ import { CardTitle, MutedText, PageTitle, Text } from "@/src/components/ui/typog
 import { ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { usersService } from "@/src/modules/users/services/users.service";
+import { normalizeObject, normalizePermissions } from "@/src/modules/users/utils/response-normalizer";
 
 import type { UnknownRecord } from "@/src/modules/users/types";
-
-const isRecord = (value: unknown): value is UnknownRecord =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const toDisplayValue = (value: unknown): string => {
   if (typeof value === "string") {
@@ -40,17 +38,7 @@ const toDisplayValue = (value: unknown): string => {
   }
 };
 
-const readPermissions = (source: UnknownRecord): string[] => {
-  const candidates = [source.permissions, source.items, source.data];
 
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate.filter((item): item is string => typeof item === "string");
-    }
-  }
-
-  return [];
-};
 
 export default function AdminUserDetailsPage() {
   const { t } = useI18n();
@@ -70,9 +58,9 @@ export default function AdminUserDetailsPage() {
 
     try {
       const response = await usersService.getUserById(userId);
-      setUserInfo(isRecord(response.data) ? response.data : null);
+      setUserInfo(normalizeObject(response));
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
       setUserInfo(null);
     } finally {
       setLoading(false);
@@ -84,13 +72,9 @@ export default function AdminUserDetailsPage() {
 
     try {
       const response = await usersService.getUserPermissions(userId);
-      if (isRecord(response.data)) {
-        setPermissions(readPermissions(response.data));
-      } else {
-        setPermissions([]);
-      }
+      setPermissions(normalizePermissions(response));
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
       setPermissions([]);
     } finally {
       setPermissionsLoading(false);
@@ -117,7 +101,7 @@ export default function AdminUserDetailsPage() {
       setPermissionInput("");
       await loadPermissions();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
     } finally {
       setMutating(false);
     }
@@ -130,7 +114,20 @@ export default function AdminUserDetailsPage() {
       await usersService.removeUserPermission(userId, [permission]);
       await loadPermissions();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const onReplacePermissions = async () => {
+    setMutating(true);
+
+    try {
+      await usersService.replacePermissions(userId, permissions);
+      await loadPermissions();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
     } finally {
       setMutating(false);
     }
@@ -148,7 +145,7 @@ export default function AdminUserDetailsPage() {
         </div>
       </section>
 
-      {error ? <AlertBanner variant="error" title={t("users.error.title")} description={error} /> : null}
+      {error ? <AlertBanner variant="error" title={t("users.errors.loadFailed")} description={error} /> : null}
 
       <Card>
         <CardHeader>
@@ -167,7 +164,7 @@ export default function AdminUserDetailsPage() {
               ))}
             </div>
           ) : (
-            <Text>{t("users.empty.description")}</Text>
+            <Text>{t("users.emptyDescription")}</Text>
           )}
         </CardContent>
       </Card>
@@ -188,7 +185,16 @@ export default function AdminUserDetailsPage() {
             <Button disabled={mutating || !permissionInput.trim()} onClick={() => void onAddPermission()}>
               {mutating ? t("users.loading") : t("users.permissions.add")}
             </Button>
+            <Button
+              variant="secondary"
+              disabled={mutating}
+              onClick={() => void onReplacePermissions()}
+            >
+              {t("users.permissions.replace")}
+            </Button>
           </div>
+
+          <MutedText>{t("users.permissions.replaceHint")}</MutedText>
 
           {permissionsLoading ? (
             <Text>{t("users.loading")}</Text>
@@ -204,7 +210,7 @@ export default function AdminUserDetailsPage() {
               ))}
             </ul>
           ) : (
-            <Text>{t("users.empty.description")}</Text>
+            <Text>{t("users.emptyDescription")}</Text>
           )}
         </CardContent>
       </Card>

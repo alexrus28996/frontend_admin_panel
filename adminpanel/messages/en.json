@@ -186,7 +186,9 @@
       "inputPlaceholder": "Enter permission",
       "add": "Add permission",
       "remove": "Remove",
-      "empty": "No permissions available"
+      "empty": "No permissions available",
+      "replace": "Replace permissions",
+      "replaceHint": "Replace uses the current permissions list as the full set."
     },
     "promote": {
       "success": "User promoted successfully",
@@ -219,7 +221,12 @@
     "back": "Back to Users",
     "loading": "Loading...",
     "preview": "Preview",
-    "infoTitle": "User info"
+    "infoTitle": "User info",
+    "emptyTitle": "No users found",
+    "emptyDescription": "No users to display right now",
+    "errors": {
+      "loadFailed": "Failed to load users data"
+    }
   },
   "shell": {
     "searchPlaceholder": "Search navigation, users, and reports",

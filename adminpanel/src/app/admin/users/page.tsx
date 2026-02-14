@@ -14,6 +14,7 @@ import { MutedText, PageTitle } from "@/src/components/ui/typography";
 import { ROUTES } from "@/src/constants/routes";
 import { useI18n } from "@/src/i18n/providers/i18n-provider";
 import { usersService } from "@/src/modules/users/services/users.service";
+import { normalizeList } from "@/src/modules/users/utils/response-normalizer";
 
 import type { DataTableColumn } from "@/src/components/data-table/data-table";
 import type { UnknownRecord } from "@/src/modules/users/types";
@@ -74,15 +75,11 @@ export default function AdminUsersPage() {
         limit: pageSize,
       });
 
-      if (Array.isArray(response.data)) {
-        setRows(response.data.filter((item): item is UnknownRecord => isRecord(item)));
-        return;
-      }
-
-      setRows([]);
+      const normalized = normalizeList(response);
+      setRows(normalized.filter((item): item is UnknownRecord => isRecord(item)));
     } catch (nextError) {
       setRows([]);
-      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -99,7 +96,7 @@ export default function AdminUsersPage() {
       await action();
       await refreshUsers();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : t("errors.general"));
+      setError(nextError instanceof Error ? nextError.message : t("users.errors.loadFailed"));
     } finally {
       setActionLoadingById((prev) => ({ ...prev, [id]: false }));
     }
@@ -137,7 +134,7 @@ export default function AdminUsersPage() {
         const itemId = getUserId(item);
 
         if (!itemId) {
-          return <MutedText>{t("users.empty.description")}</MutedText>;
+          return <MutedText>{t("users.emptyDescription")}</MutedText>;
         }
 
         const isMutating = Boolean(actionLoadingById[itemId]);
@@ -183,7 +180,7 @@ export default function AdminUsersPage() {
         <MutedText>{t("users.subtitle")}</MutedText>
       </section>
 
-      {error ? <AlertBanner variant="error" title={t("users.error.title")} description={error} /> : null}
+      {error ? <AlertBanner variant="error" title={t("users.errors.loadFailed")} description={error} /> : null}
 
       <Card>
         <CardContent className="space-y-4">
@@ -198,18 +195,20 @@ export default function AdminUsersPage() {
             }}
           />
 
-          {!loading && rows.length === 0 ? (
-            <EmptyState title={t("users.title")} description={t("users.empty.description")} />
+          {!loading && !error && rows.length === 0 ? (
+            <EmptyState title={t("users.emptyTitle")} description={t("users.emptyDescription")} />
           ) : null}
 
-          <DataTable<UnknownRecord>
-            columns={columns}
-            rows={rows}
-            loading={loading}
-            error={error}
-            pagination={{ page, pageSize, totalItems: rows.length, totalPages: Math.max(1, Math.ceil(rows.length / pageSize)) }}
-            onPaginationChange={(nextPagination) => setPage(nextPagination.page)}
-          />
+          {loading || (!error && rows.length > 0) ? (
+            <DataTable<UnknownRecord>
+              columns={columns}
+              rows={rows}
+              loading={loading}
+              error={error}
+              pagination={{ page, pageSize, totalItems: rows.length, totalPages: Math.max(1, Math.ceil(rows.length / pageSize)) }}
+              onPaginationChange={(nextPagination) => setPage(nextPagination.page)}
+            />
+          ) : null}
         </CardContent>
       </Card>
     </div>
