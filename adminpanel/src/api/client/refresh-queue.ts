@@ -32,7 +32,7 @@ const handleRefreshFailure = (error: Error): never => {
   tokenStorage.clearTokens();
 
   if (typeof window !== "undefined") {
-    window.location.replace(APP_ROUTES.auth.sessionExpired);
+    window.location.replace(APP_ROUTES.auth.login);
   }
 
   throw error;

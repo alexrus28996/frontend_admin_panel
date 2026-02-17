@@ -4,11 +4,13 @@ import { NextResponse } from "next/server";
 import { env } from "@/src/config/env";
 import { APP_ROUTES, DEFAULT_AUTHENTICATED_ROUTE, PUBLIC_ROUTES } from "@/src/constants/routes";
 
+const adminBaseRoute = APP_ROUTES.admin.dashboard.split("/dashboard")[0] ?? APP_ROUTES.admin.dashboard;
+
 const isPublicRoute = (pathname: string): boolean =>
   PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
 const isProtectedApplicationRoute = (pathname: string): boolean =>
-  pathname === "/admin" || pathname.startsWith("/admin/");
+  pathname === adminBaseRoute || pathname.startsWith(`${adminBaseRoute}/`);
 
 const hasAuthIndicator = (request: NextRequest): boolean => {
   const accessTokenCookie = request.cookies.get(env.authCookieName)?.value;
@@ -48,5 +50,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/login"],
+  matcher: ["/:path*"],
 };

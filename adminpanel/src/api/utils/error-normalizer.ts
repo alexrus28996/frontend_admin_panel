@@ -13,10 +13,10 @@ export const normalizeApiError = (error: unknown): NormalizedApiErrorShape => {
     const payload = error.data as ApiErrorPayload | undefined;
 
     return {
-      code: payload?.code ?? ERROR_CODES.unknown,
-      message: payload?.message ?? error.message,
-      details: payload?.details,
-      status: payload?.status ?? error.status,
+      code: payload?.error?.code ?? ERROR_CODES.unknown,
+      message: payload?.error?.message ?? error.message,
+      details: payload?.error?.details,
+      status: error.status,
     };
   }
 

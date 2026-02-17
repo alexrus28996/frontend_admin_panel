@@ -54,18 +54,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    try {
-      const user = await authService.me();
-      setState((prev) => ({ ...prev, isLoading: false, isAuthenticated: true, user }));
-    } catch {
-      clearSession();
-      router.replace(APP_ROUTES.auth.sessionExpired);
-    }
-  }, [clearSession, router]);
+    const data = await authService.me();
+    setState((prev) => ({ ...prev, isLoading: false, isAuthenticated: true, user: data }));
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const session = await authService.login({ email, password });
+      const session = await authService.login(email, password);
       applySession(session);
     },
     [applySession],
@@ -80,8 +75,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } finally {
       clearSession();
+      router.replace(APP_ROUTES.auth.login);
     }
-  }, [clearSession]);
+  }, [clearSession, router]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -93,21 +89,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      if (!accessToken && refreshToken) {
-        try {
-          const refreshedSession = await authService.refresh(refreshToken);
-          tokenStorage.setTokens({
-            accessToken: refreshedSession.token,
-            refreshToken: refreshedSession.refreshToken,
-          });
-        } catch {
+      try {
+        await refreshProfile();
+        return;
+      } catch {
+        if (!refreshToken) {
           clearSession();
-          router.replace(APP_ROUTES.auth.sessionExpired);
+          router.replace(APP_ROUTES.auth.login);
           return;
         }
       }
 
-      await refreshProfile();
+      try {
+        const refreshedSession = await authService.refresh(refreshToken);
+        tokenStorage.setTokens({
+          accessToken: refreshedSession.token,
+          refreshToken: refreshedSession.refreshToken,
+        });
+
+        await refreshProfile();
+      } catch {
+        clearSession();
+        router.replace(APP_ROUTES.auth.login);
+      }
     };
 
     void bootstrap();

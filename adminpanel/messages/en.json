@@ -28,7 +28,7 @@
     "admin": "Admin"
   },
   "common": {
-    "loading": "Loading",
+    "loading": "Loading...",
     "retry": "Retry",
     "noData": "No data available",
     "emptyDescription": "There are no records to display yet",
@@ -44,13 +44,14 @@
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
     "trendUp": "Up",
-    "trendDown": "Down"
+    "trendDown": "Down",
+    "error": "Something went wrong"
   },
   "auth": {
     "guest": "Guest",
     "login": {
-      "title": "Sign in",
-      "subtitle": "Use your enterprise credentials to continue",
+      "title": "Login",
+      "subtitle": "Sign in to continue",
       "heroTitle": "Secure access for your operations workspace",
       "heroDescription": "Manage teams, permissions, and platform activity from one trusted console.",
       "formAria": "Login form",
@@ -62,7 +63,9 @@
       "passwordAria": "Password",
       "showPassword": "Show",
       "hidePassword": "Hide",
-      "submit": "Sign in"
+      "submit": "Sign in",
+      "email": "Email",
+      "password": "Password"
     },
     "logout": {
       "title": "Signing out",
@@ -248,5 +251,7 @@
   "shell": {
     "searchPlaceholder": "Search navigation, users, and reports",
     "breadcrumbSeparator": "/"
-  }
+  },
+  "auth.logout": "Logout",
+  "auth.sessionExpired": "Your session expired. Please sign in again."
 }

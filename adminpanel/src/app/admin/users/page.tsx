@@ -23,6 +23,9 @@ import type { DataTableColumn } from "@/src/components/data-table/data-table";
 import type { UnknownRecord } from "@/src/modules/users/types";
 import type { CreateUserSchemaInput } from "@/src/schemas/users/create-user.schema";
 
+type PromiseVoid = Promise<void>;
+type UserAction = () => PromiseVoid;
+
 const isRecord = (value: unknown): value is UnknownRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -138,7 +141,7 @@ export default function AdminUsersPage() {
     void refreshUsers();
   }, [refreshUsers]);
 
-  const withActionLoading = useCallback(async (id: string, action: () => Promise<void>) => {
+  const withActionLoading = useCallback(async (id: string, action: UserAction) => {
     setActionLoadingById((prev) => ({ ...prev, [id]: true }));
 
     try {

@@ -1,43 +1,11 @@
-import { apiClient } from "@/src/api/client/axios-client";
-import { API_ENDPOINTS } from "@/src/constants/api-endpoints";
+import { authService as authModuleService } from "@/src/modules/auth/services/auth.service";
 
-import type { AuthSession, AuthUser } from "@/src/auth/types/auth";
-
-interface LoginInput {
-  email: string;
-  password: string;
-}
-
-interface LoginResponse {
-  token: string;
-  refreshToken: string;
-  user: AuthUser;
-}
-
-interface RefreshInput {
-  refreshToken: string;
-}
-
-interface RefreshResponse {
-  token: string;
-  refreshToken: string;
-}
-
-interface MeResponse {
-  user: AuthUser;
-}
-
-const resolveUser = (response: AuthUser | MeResponse): AuthUser => {
-  if ("user" in response) {
-    return response.user;
-  }
-
-  return response;
-};
+import type { AuthSession } from "@/src/auth/types/auth";
+import type { AuthRefreshResponse } from "@/src/modules/auth/types";
 
 export const authService = {
-  async login(input: LoginInput): Promise<AuthSession> {
-    const data = await apiClient.post<LoginResponse, LoginInput>(API_ENDPOINTS.auth.login, input);
+  async login(email: string, password: string): Promise<AuthSession> {
+    const data = await authModuleService.login({ email, password });
 
     return {
       accessToken: data.token,
@@ -45,14 +13,14 @@ export const authService = {
       user: data.user,
     };
   },
-  async logout(refreshToken: string): Promise<void> {
-    await apiClient.post<unknown, RefreshInput>(API_ENDPOINTS.auth.logout, { refreshToken });
+  refresh(refreshToken: string): Promise<AuthRefreshResponse> {
+    return authModuleService.refresh({ refreshToken });
   },
-  async me(): Promise<AuthUser> {
-    const data = await apiClient.get<AuthUser | MeResponse>(API_ENDPOINTS.auth.me);
-    return resolveUser(data);
+  async me() {
+    const data = await authModuleService.me();
+    return data.user;
   },
-  async refresh(refreshToken: string): Promise<RefreshResponse> {
-    return apiClient.post<RefreshResponse, RefreshInput>(API_ENDPOINTS.auth.refresh, { refreshToken });
+  logout(refreshToken: string) {
+    return authModuleService.logout({ refreshToken });
   },
 };

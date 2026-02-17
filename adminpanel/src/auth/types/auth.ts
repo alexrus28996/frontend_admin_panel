@@ -1,15 +1,5 @@
 import type { Nullable } from "@/src/api/types/common";
-import type { AppPermission } from "@/src/constants/permissions";
-import type { AppRole } from "@/src/constants/roles";
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  roles: AppRole[];
-  permissions: AppPermission[];
-}
+import type { AuthUser } from "@/src/modules/auth/types";
 
 export interface TokenPair {
   accessToken: string;

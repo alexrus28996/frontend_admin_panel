@@ -1,10 +1,11 @@
 export type Nullable<T> = T | null;
 
 export interface ApiErrorPayload {
-  code?: string;
-  message?: string;
-  details?: unknown;
-  status?: number;
+  error?: {
+    code?: string;
+    message?: string;
+    details?: unknown;
+  };
 }
 
 export interface NormalizedApiErrorShape {
