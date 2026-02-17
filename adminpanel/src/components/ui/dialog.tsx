@@ -6,12 +6,14 @@ export const Dialog = ({
   open,
   title,
   description,
+  closeLabel,
   onClose,
   children,
 }: {
   open: boolean;
   title: string;
   description?: string;
+  closeLabel: string;
   onClose: () => void;
   children: React.ReactNode;
 }) => {
@@ -47,8 +49,8 @@ export const Dialog = ({
         {description ? <p className="mt-1 text-sm text-text-secondary">{description}</p> : null}
         <div className="mt-4">{children}</div>
         <div className="mt-5 flex justify-end">
-          <Button variant="secondary" onClick={onClose} ariaLabel="Close dialog">
-            Close
+          <Button variant="secondary" onClick={onClose} ariaLabel={closeLabel}>
+            {closeLabel}
           </Button>
         </div>
       </div>

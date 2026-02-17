@@ -225,7 +225,24 @@
     "emptyTitle": "No users found",
     "emptyDescription": "No users to display right now",
     "errors": {
-      "loadFailed": "Failed to load users data"
+      "loadFailed": "Failed to load users data",
+      "unknownSchema": "Users response schema is not supported"
+    },
+    "create": {
+      "open": "Create User",
+      "title": "Create User",
+      "description": "Create a user via backend register endpoint.",
+      "submit": "Create User",
+      "close": "Close",
+      "successTitle": "User created",
+      "success": "User created successfully",
+      "errorTitle": "Unable to create user",
+      "error": "Unable to create user",
+      "fields": {
+        "name": "Name",
+        "email": "Email",
+        "password": "Password"
+      }
     }
   },
   "shell": {

@@ -29,6 +29,20 @@ const nonRefreshableEndpoints = new Set<string>([
   API_ENDPOINTS.auth.refresh,
 ]);
 
+const apiRootPath = API_ENDPOINTS.auth.login.split("/auth/")[0] ?? "";
+
+const normalizeApiBaseUrl = (baseUrl: string): string => {
+  const trimmed = baseUrl.trim();
+
+  if (!trimmed) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is required");
+  }
+
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  return withoutTrailingSlash.endsWith(apiRootPath) ? withoutTrailingSlash : `${withoutTrailingSlash}${apiRootPath}`;
+};
+
+const apiBaseUrl = normalizeApiBaseUrl(env.apiBaseUrl);
 
 const withTimeoutSignal = (timeoutMs: number, externalSignal?: AbortSignal | null): AbortSignal => {
   const controller = new AbortController();
@@ -49,6 +63,16 @@ const withTimeoutSignal = (timeoutMs: number, externalSignal?: AbortSignal | nul
   return controller.signal;
 };
 
+const normalizePath = (path: string): string => {
+  const prefix = `${apiRootPath}/`;
+
+  if (path.startsWith(prefix)) {
+    return path.slice(apiRootPath.length);
+  }
+
+  return path;
+};
+
 const request = async <TResponse>(path: string, options: RequestOptions = {}): Promise<TResponse> => {
   const accessToken = tokenStorage.getAccessToken();
   const headers = new Headers(options.headers);
@@ -61,7 +85,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(`${env.apiBaseUrl}${path.replace(env.apiBaseUrl, "")}`, {
+  const response = await fetch(`${apiBaseUrl}${normalizePath(path)}`, {
     ...options,
     headers,
     signal: withTimeoutSignal(options.timeoutMs ?? env.requestTimeoutMs, options.signal),
@@ -83,7 +107,7 @@ const request = async <TResponse>(path: string, options: RequestOptions = {}): P
     try {
       const nextToken = await refreshAccessToken({
         refresh: (refreshToken: string) =>
-          apiClient.post<{ token: string; refreshToken: string }, { refreshToken: string }>(
+          apiClient.post<{ token: string; refreshToken: string }, { refreshToken }>(
             API_ENDPOINTS.auth.refresh,
             { refreshToken },
           ),
